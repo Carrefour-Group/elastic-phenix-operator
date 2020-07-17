@@ -1,0 +1,10 @@
+domain: carrefour.com
+repo: github.com/Carrefour-Group/elastic-phenix-operator
+resources:
+- group: elastic
+  kind: ElasticIndex
+  version: v1alpha1
+- group: elastic
+  kind: ElasticTemplate
+  version: v1alpha1
+version: "2"
