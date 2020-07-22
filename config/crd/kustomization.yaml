@@ -1,0 +1,27 @@
+# This kustomization.yaml is not intended to be run by itself,
+# since it depends on service name and namespace that are out of this kustomize package.
+# It should be run by config/default
+resources:
+- bases/elastic.carrefour.com_elasticindices.yaml
+- bases/elastic.carrefour.com_elastictemplates.yaml
+# +kubebuilder:scaffold:crdkustomizeresource
+
+patchesStrategicMerge:
+# Fix issue https://github.com/kubernetes-sigs/kubebuilder/issues/933
+# with related PR: https://github.com/kubernetes-sigs/kubebuilder/pull/1644
+- patches/fix-issue-933.yaml
+# [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix.
+# patches here are for enabling the conversion webhook for each CRD
+- patches/webhook_in_elasticindices.yaml
+- patches/webhook_in_elastictemplates.yaml
+# +kubebuilder:scaffold:crdkustomizewebhookpatch
+
+# [CERTMANAGER] To enable webhook, uncomment all the sections with [CERTMANAGER] prefix.
+# patches here are for enabling the CA injection for each CRD
+- patches/cainjection_in_elasticindices.yaml
+- patches/cainjection_in_elastictemplates.yaml
+# +kubebuilder:scaffold:crdkustomizecainjectionpatch
+
+# the following config is for teaching kustomize how to do kustomization for CRDs.
+configurations:
+- kustomizeconfig.yaml

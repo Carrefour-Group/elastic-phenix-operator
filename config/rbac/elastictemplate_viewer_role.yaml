@@ -1,0 +1,20 @@
+# permissions for end users to view elastictemplates.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: elastictemplate-viewer-role
+rules:
+- apiGroups:
+  - elastic.carrefour.com
+  resources:
+  - elastictemplates
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - elastic.carrefour.com
+  resources:
+  - elastictemplates/status
+  verbs:
+  - get

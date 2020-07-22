@@ -1,0 +1,36 @@
+apiVersion: elastic.carrefour.com/v1alpha1
+kind: ElasticTemplate
+metadata:
+  name: invoice-template
+  namespace: elasticsearch
+spec:
+  templateName: invoice
+  elasticURI:
+    secretKeyRef:
+      name: elasticsearch-cluster-secret
+      key: uri
+  numberOfShards: 5
+  numberOfReplicas: 3
+  model: |-
+    {
+      "index_patterns": ["invoice*"],
+      "settings": {
+      },
+      "mappings": {
+        "_doc": {
+          "_source": {
+            "enabled": true
+          },
+          "properties": {
+            "key": {
+              "type": "keyword",
+              "index": true
+            },
+            "content": {
+              "type": "text",
+              "index": true
+            }
+          }
+        }
+      }
+    }

@@ -1,0 +1,24 @@
+# permissions for end users to edit elasticindices.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: elasticindex-editor-role
+rules:
+- apiGroups:
+  - elastic.carrefour.com
+  resources:
+  - elasticindices
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - elastic.carrefour.com
+  resources:
+  - elasticindices/status
+  verbs:
+  - get

@@ -1,0 +1,90 @@
+
+---
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: MutatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: mutating-webhook-configuration
+webhooks:
+- clientConfig:
+    caBundle: Cg==
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-elastic-phenix-carrefour-com-v1alpha1-elasticindex
+  failurePolicy: Fail
+  name: melasticindex.kb.io
+  rules:
+  - apiGroups:
+    - elastic.carrefour.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - elasticindices
+- clientConfig:
+    caBundle: Cg==
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-elastic-phenix-carrefour-com-v1alpha1-elastictemplate
+  failurePolicy: Fail
+  name: melastictemplate.kb.io
+  rules:
+  - apiGroups:
+    - elastic.carrefour.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - elastictemplates
+
+---
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: ValidatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: validating-webhook-configuration
+webhooks:
+- clientConfig:
+    caBundle: Cg==
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-elastic-phenix-carrefour-com-v1alpha1-elasticindex
+  failurePolicy: Fail
+  name: velasticindex.kb.io
+  rules:
+  - apiGroups:
+    - elastic.carrefour.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    - DELETE
+    resources:
+    - elasticindices
+- clientConfig:
+    caBundle: Cg==
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-elastic-phenix-carrefour-com-v1alpha1-elastictemplate
+  failurePolicy: Fail
+  name: velastictemplate.kb.io
+  rules:
+  - apiGroups:
+    - elastic.carrefour.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    - DELETE
+    resources:
+    - elastictemplates

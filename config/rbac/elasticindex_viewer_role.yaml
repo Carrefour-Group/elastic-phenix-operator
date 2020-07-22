@@ -1,0 +1,20 @@
+# permissions for end users to view elasticindices.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: elasticindex-viewer-role
+rules:
+- apiGroups:
+  - elastic.carrefour.com
+  resources:
+  - elasticindices
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - elastic.carrefour.com
+  resources:
+  - elasticindices/status
+  verbs:
+  - get

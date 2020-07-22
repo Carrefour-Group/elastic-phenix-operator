@@ -1,0 +1,76 @@
+apiVersion: elastic.carrefour.com/v1alpha1
+kind: ElasticIndex
+metadata:
+  name: product-index
+  namespace: elasticsearch
+spec:
+  indexName: product
+  elasticURI:
+    secretKeyRef:
+      name: elasticsearch-cluster-secret
+      key: uri
+  numberOfShards: 6
+  numberOfReplicas: 1
+  model: |-
+    {
+      "settings": {
+      },
+      "mappings": {
+        "_doc": {
+          "_source": {
+            "enabled": true
+          },
+          "dynamic": false,
+          "properties": {
+            "barcode": {
+              "type": "keyword",
+              "index": true
+            },
+            "description": {
+              "type": "text",
+              "index": true
+            }
+          }
+        }
+      }
+    }
+
+---
+apiVersion: elastic.carrefour.com/v1alpha1
+kind: ElasticIndex
+metadata:
+  name: city-index
+  namespace: elasticsearch-dev
+spec:
+  indexName: city
+  elasticURI:
+    secretKeyRef:
+      name: elasticsearch-cluster-secret
+      key: uri
+  numberOfShards: 4
+  numberOfReplicas: 3
+  model: |-
+    {
+      "settings": {
+        "number_of_shards" : "5",
+        "number_of_replicas" : "3"
+      },
+      "mappings": {
+        "_doc": {
+          "_source": {
+            "enabled": true
+          },
+          "dynamic": false,
+          "properties": {
+            "cityCode": {
+              "type": "keyword",
+              "index": true
+            },
+            "cityName": {
+              "type": "text",
+              "index": true
+            }
+          }
+        }
+      }
+    }

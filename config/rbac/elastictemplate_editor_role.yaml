@@ -1,0 +1,24 @@
+# permissions for end users to edit elastictemplates.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: elastictemplate-editor-role
+rules:
+- apiGroups:
+  - elastic.carrefour.com
+  resources:
+  - elastictemplates
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - elastic.carrefour.com
+  resources:
+  - elastictemplates/status
+  verbs:
+  - get
