@@ -1,0 +1,13 @@
+version: '2.2'
+services:
+  release:
+    build:
+      context: .
+      dockerfile: Dockerfile.kustomize
+    working_dir: /workspace
+    volumes:
+     - .:/workspace
+    stdin_open: true
+    tty: true
+
+
