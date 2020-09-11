@@ -1,0 +1,5 @@
+FROM stpabhi/kubebuilder:v2.3.1 as kubebuilder
+
+FROM golang:1.13
+COPY --from=kubebuilder /usr/local/kubebuilder /usr/local/kubebuilder
+ENV PATH=$PATH:/usr/local/kubebuilder/bin

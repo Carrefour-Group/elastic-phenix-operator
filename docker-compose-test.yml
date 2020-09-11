@@ -1,0 +1,27 @@
+version: '2.2'
+services:
+  elastic:
+    image: elasticsearch:7.9.2
+    environment:
+      - network.host=_site_
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - 9200
+  build:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    working_dir: /workspace
+    environment:
+      - "GOFLAGS=-mod=vendor"
+    volumes:
+     - .:/workspace
+    stdin_open: true
+    tty: true
+
+
