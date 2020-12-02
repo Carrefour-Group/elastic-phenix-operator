@@ -11,7 +11,7 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-elastic-phenix-carrefour-com-v1alpha1-elasticindex
+      path: /mutate-elastic-carrefour-com-v1alpha1-elasticindex
   failurePolicy: Fail
   name: melasticindex.kb.io
   rules:
@@ -29,7 +29,7 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-elastic-phenix-carrefour-com-v1alpha1-elastictemplate
+      path: /mutate-elastic-carrefour-com-v1alpha1-elastictemplate
   failurePolicy: Fail
   name: melastictemplate.kb.io
   rules:
@@ -55,7 +55,7 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-elastic-phenix-carrefour-com-v1alpha1-elasticindex
+      path: /validate-elastic-carrefour-com-v1alpha1-elasticindex
   failurePolicy: Fail
   name: velasticindex.kb.io
   rules:
@@ -74,7 +74,7 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-elastic-phenix-carrefour-com-v1alpha1-elastictemplate
+      path: /validate-elastic-carrefour-com-v1alpha1-elastictemplate
   failurePolicy: Fail
   name: velastictemplate.kb.io
   rules:

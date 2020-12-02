@@ -46,7 +46,7 @@ func (r *ElasticIndex) SetupWebhookWithManager(mgr ctrl.Manager, namespaces []st
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-// +kubebuilder:webhook:path=/mutate-elastic-phenix-carrefour-com-v1alpha1-elasticindex,mutating=true,failurePolicy=fail,groups=elastic.carrefour.com,resources=elasticindices,verbs=create;update,versions=v1alpha1,name=melasticindex.kb.io
+// +kubebuilder:webhook:path=/mutate-elastic-carrefour-com-v1alpha1-elasticindex,mutating=true,failurePolicy=fail,groups=elastic.carrefour.com,resources=elasticindices,verbs=create;update,versions=v1alpha1,name=melasticindex.kb.io
 
 var _ webhook.Defaulter = &ElasticIndex{}
 
@@ -64,7 +64,7 @@ func (r *ElasticIndex) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:verbs=create;update;delete,path=/validate-elastic-phenix-carrefour-com-v1alpha1-elasticindex,mutating=false,failurePolicy=fail,groups=elastic.carrefour.com,resources=elasticindices,versions=v1alpha1,name=velasticindex.kb.io
+// +kubebuilder:webhook:verbs=create;update;delete,path=/validate-elastic-carrefour-com-v1alpha1-elasticindex,mutating=false,failurePolicy=fail,groups=elastic.carrefour.com,resources=elasticindices,versions=v1alpha1,name=velasticindex.kb.io
 
 var _ webhook.Validator = &ElasticIndex{}
 

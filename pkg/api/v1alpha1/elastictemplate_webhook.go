@@ -46,7 +46,7 @@ func (r *ElasticTemplate) SetupWebhookWithManager(mgr ctrl.Manager, namespaces [
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-// +kubebuilder:webhook:path=/mutate-elastic-phenix-carrefour-com-v1alpha1-elastictemplate,mutating=true,failurePolicy=fail,groups=elastic.carrefour.com,resources=elastictemplates,verbs=create;update,versions=v1alpha1,name=melastictemplate.kb.io
+// +kubebuilder:webhook:path=/mutate-elastic-carrefour-com-v1alpha1-elastictemplate,mutating=true,failurePolicy=fail,groups=elastic.carrefour.com,resources=elastictemplates,verbs=create;update,versions=v1alpha1,name=melastictemplate.kb.io
 
 var _ webhook.Defaulter = &ElasticTemplate{}
 
@@ -64,7 +64,7 @@ func (r *ElasticTemplate) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:verbs=create;update;delete,path=/validate-elastic-phenix-carrefour-com-v1alpha1-elastictemplate,mutating=false,failurePolicy=fail,groups=elastic.carrefour.com,resources=elastictemplates,versions=v1alpha1,name=velastictemplate.kb.io
+// +kubebuilder:webhook:verbs=create;update;delete,path=/validate-elastic-carrefour-com-v1alpha1-elastictemplate,mutating=false,failurePolicy=fail,groups=elastic.carrefour.com,resources=elastictemplates,versions=v1alpha1,name=velastictemplate.kb.io
 
 var _ webhook.Validator = &ElasticTemplate{}
 
