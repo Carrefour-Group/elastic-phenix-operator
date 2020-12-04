@@ -33,7 +33,7 @@ node("slave") {
             sh 'make docker-build'
         }
 
-        if ("${env.BRANCH_NAME}".equals("master")) {
+        if ("${env.BRANCH_NAME}" == "master") {
             stage('docker push') {
                 sh 'make docker-push'
             }
