@@ -348,10 +348,11 @@ func (es *Elasticsearch) DeleteIndex(indexName string) error {
 	return nil
 }
 
-func (es *Elasticsearch) CreateOrUpdateTemplate(templateName string, body string) (*EsStatus, error) {
+func (es *Elasticsearch) CreateOrUpdateTemplate(templateName string, model string) (*EsStatus, error) {
 	exists := es.existsTemplate(templateName)
 
-	response, err := es.Client.Indices.PutTemplate(templateName, strings.NewReader(body))
+	shouldIncludeTypeName := (&EsModel{Model: model}).IsMappingWithType()
+	response, err := esapi.IndicesPutTemplateRequest{Name: templateName, Body: strings.NewReader(model), IncludeTypeName: shouldIncludeTypeName}.Do(context.Background(), es.Client)
 	if err != nil || exists == nil {
 		es.log.Error(err, "error while creating template", "templateName", templateName)
 		return &EsStatus{Status: StatusError, Message: err.Error()}, err
