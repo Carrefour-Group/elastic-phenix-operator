@@ -33,8 +33,10 @@ node("slave") {
             sh 'make docker-build'
         }
 
-        stage('docker push') {
-            sh 'make docker-push'
+        if ("${env.BRANCH_NAME}".equals("master")) {
+            stage('docker push') {
+                sh 'make docker-push'
+            }
         }
 
         stage('docker rmi') {
@@ -42,8 +44,9 @@ node("slave") {
         }
     } finally {
         if (!containersDown) {
-            stage "stop containers"
-            sh 'make docker-down'
+            stage ('stop containers') {
+                sh 'make docker-down'
+            }
         }
     }
 }

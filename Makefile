@@ -103,18 +103,18 @@ git-unlock:
 # Build the docker image
 docker-build:
 	docker build . -t ${IMG}
+	docker tag ${IMG} ${LATEST_IMG}
 
 # Push the docker image
 docker-push: git-unlock
 	@echo "docker login ..."
 	@docker login --username=${DOCKER_USERNAME} --password=${DOCKER_PASSWORD}
 	docker push ${IMG}
-	docker tag ${IMG} ${LATEST_IMG}
 	docker push ${LATEST_IMG}
 	docker logout
 
 docker-rmi:
-	docker rmi ${IMG} ${LATEST_IMG}
+	docker rmi ${IMG} ${LATEST_IMG} || true
 
 # find or download controller-gen
 # download controller-gen if necessary
