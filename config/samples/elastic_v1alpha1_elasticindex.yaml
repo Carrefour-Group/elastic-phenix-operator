@@ -16,20 +16,18 @@ spec:
       "settings": {
       },
       "mappings": {
-        "_doc": {
-          "_source": {
-            "enabled": true
+        "_source": {
+          "enabled": true
+        },
+        "dynamic": false,
+        "properties": {
+          "barcode": {
+            "type": "keyword",
+            "index": true
           },
-          "dynamic": false,
-          "properties": {
-            "barcode": {
-              "type": "keyword",
-              "index": true
-            },
-            "description": {
-              "type": "text",
-              "index": true
-            }
+          "description": {
+            "type": "text",
+            "index": true
           }
         }
       }
@@ -56,20 +54,18 @@ spec:
         "number_of_replicas" : "3"
       },
       "mappings": {
-        "_doc": {
-          "_source": {
-            "enabled": true
+        "_source": {
+          "enabled": true
+        },
+        "dynamic": false,
+        "properties": {
+          "cityCode": {
+            "type": "keyword",
+            "index": true
           },
-          "dynamic": false,
-          "properties": {
-            "cityCode": {
-              "type": "keyword",
-              "index": true
-            },
-            "cityName": {
-              "type": "text",
-              "index": true
-            }
+          "cityName": {
+            "type": "text",
+            "index": true
           }
         }
       }
