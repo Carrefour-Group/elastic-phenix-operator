@@ -76,10 +76,10 @@ func (r *ElasticTemplateReconciler) Reconcile(req ctrl.Request) (ctrl.Result, er
 		}
 	}
 
-	if deleteRequest, err := manageTemplateFinalizer(elasticTemplate, elasticsearch, log, r); err != nil {
+	if deleteRequest, err := manageTemplateFinalizer(ctx, elasticTemplate, elasticsearch, log, r); err != nil {
 		return ctrl.Result{}, err
 	} else if !deleteRequest {
-		if err := elasticsearch.PingES(); err != nil {
+		if err := elasticsearch.PingES(ctx); err != nil {
 			if templateStatusUpdated(&elasticTemplate.Status, &utils.EsStatus{Status: utils.StatusRetry, Message: err.Error()}, log) {
 				if err := r.Status().Update(ctx, &elasticTemplate); err != nil {
 					return ctrl.Result{RequeueAfter: RetryInterval}, nil
@@ -88,7 +88,7 @@ func (r *ElasticTemplateReconciler) Reconcile(req ctrl.Request) (ctrl.Result, er
 			return ctrl.Result{RequeueAfter: RetryInterval}, nil
 		}
 		log.Info("create/update ElasticTemplate", "templateName", elasticTemplate.Spec.TemplateName)
-		esStatus, err := elasticsearch.CreateOrUpdateTemplate(*elasticTemplate.Spec.TemplateName, *elasticTemplate.Spec.Model)
+		esStatus, err := elasticsearch.CreateOrUpdateTemplate(ctx, *elasticTemplate.Spec.TemplateName, *elasticTemplate.Spec.Model)
 		if templateStatusUpdated(&elasticTemplate.Status, esStatus, log) {
 			if err := r.Status().Update(ctx, &elasticTemplate); err != nil {
 				if apierrors.IsConflict(err) {
@@ -148,7 +148,7 @@ func templateStatusUpdated(objectStatus *elasticv1alpha1.ElasticTemplateStatus, 
 	return false
 }
 
-func manageTemplateFinalizer(elasticTemplate elasticv1alpha1.ElasticTemplate, elasticsearch *utils.Elasticsearch, log logr.Logger, r *ElasticTemplateReconciler) (bool, error) {
+func manageTemplateFinalizer(ctx context.Context, elasticTemplate elasticv1alpha1.ElasticTemplate, elasticsearch *utils.Elasticsearch, log logr.Logger, r *ElasticTemplateReconciler) (bool, error) {
 	finalizerName := fmt.Sprintf("finalizer.%v", elasticv1alpha1.GroupVersion.Group)
 	deleteRequest := false
 
@@ -156,7 +156,7 @@ func manageTemplateFinalizer(elasticTemplate elasticv1alpha1.ElasticTemplate, el
 		if !utils.ContainsString(elasticTemplate.ObjectMeta.Finalizers, finalizerName) {
 			log.Info("register a finalizer")
 			elasticTemplate.ObjectMeta.Finalizers = append(elasticTemplate.ObjectMeta.Finalizers, finalizerName)
-			if err := r.Update(context.Background(), &elasticTemplate); err != nil {
+			if err := r.Update(ctx, &elasticTemplate); err != nil {
 				return deleteRequest, err
 			}
 		}
@@ -165,7 +165,7 @@ func manageTemplateFinalizer(elasticTemplate elasticv1alpha1.ElasticTemplate, el
 		deleteRequest = true
 		if utils.ContainsString(elasticTemplate.ObjectMeta.Finalizers, finalizerName) {
 			if r.EnableDelete {
-				if err := elasticsearch.DeleteTemplate(*elasticTemplate.Spec.TemplateName); err != nil {
+				if err := elasticsearch.DeleteTemplate(ctx, *elasticTemplate.Spec.TemplateName); err != nil {
 					log.Error(err, "error while deleting elasticTemplate", "templateName", *elasticTemplate.Spec.TemplateName)
 				}
 			} else {
@@ -174,7 +174,7 @@ func manageTemplateFinalizer(elasticTemplate elasticv1alpha1.ElasticTemplate, el
 
 			// remove finalizer from the list and update it.
 			elasticTemplate.ObjectMeta.Finalizers = utils.RemoveString(elasticTemplate.ObjectMeta.Finalizers, finalizerName)
-			if err := r.Update(context.Background(), &elasticTemplate); err != nil {
+			if err := r.Update(ctx, &elasticTemplate); err != nil {
 				return deleteRequest, err
 			}
 		}

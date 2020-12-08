@@ -73,17 +73,17 @@ func (r *ElasticIndexReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 		}
 	}
 
-	if deleteRequest, err := manageIndexFinalizer(elasticIndex, elasticsearch, log, r); err != nil {
+	if deleteRequest, err := manageIndexFinalizer(ctx, elasticIndex, elasticsearch, log, r); err != nil {
 		return ctrl.Result{}, err
 	} else if !deleteRequest {
-		if err := elasticsearch.PingES(); err != nil {
+		if err := elasticsearch.PingES(ctx); err != nil {
 			if indexStatusUpdated(&elasticIndex.Status, &utils.EsStatus{Status: utils.StatusRetry, Message: err.Error()}, log) {
 				r.Status().Update(ctx, &elasticIndex)
 			}
 			return ctrl.Result{RequeueAfter: RetryInterval}, nil
 		}
 		log.Info("create/update ElasticIndex", "indexName", elasticIndex.Spec.IndexName)
-		esStatus, err := elasticsearch.CreateOrUpdateIndex(*elasticIndex.Spec.IndexName, *elasticIndex.Spec.Model)
+		esStatus, err := elasticsearch.CreateOrUpdateIndex(ctx, *elasticIndex.Spec.IndexName, *elasticIndex.Spec.Model)
 		if indexStatusUpdated(&elasticIndex.Status, esStatus, log) {
 			if err := r.Status().Update(ctx, &elasticIndex); err != nil {
 				if apierrors.IsConflict(err) {
@@ -143,7 +143,7 @@ func indexStatusUpdated(objectStatus *elasticv1alpha1.ElasticIndexStatus, esStat
 	return false
 }
 
-func manageIndexFinalizer(elasticIndex elasticv1alpha1.ElasticIndex, elasticsearch *utils.Elasticsearch, log logr.Logger, r *ElasticIndexReconciler) (bool, error) {
+func manageIndexFinalizer(ctx context.Context, elasticIndex elasticv1alpha1.ElasticIndex, elasticsearch *utils.Elasticsearch, log logr.Logger, r *ElasticIndexReconciler) (bool, error) {
 	finalizerName := fmt.Sprintf("finalizer.%v", elasticv1alpha1.GroupVersion.Group)
 	deleteRequest := false
 
@@ -151,7 +151,7 @@ func manageIndexFinalizer(elasticIndex elasticv1alpha1.ElasticIndex, elasticsear
 		if !utils.ContainsString(elasticIndex.ObjectMeta.Finalizers, finalizerName) {
 			log.Info("register a finalizer")
 			elasticIndex.ObjectMeta.Finalizers = append(elasticIndex.ObjectMeta.Finalizers, finalizerName)
-			if err := r.Update(context.Background(), &elasticIndex); err != nil {
+			if err := r.Update(ctx, &elasticIndex); err != nil {
 				return deleteRequest, err
 			}
 		}
@@ -160,7 +160,7 @@ func manageIndexFinalizer(elasticIndex elasticv1alpha1.ElasticIndex, elasticsear
 		deleteRequest = true
 		if utils.ContainsString(elasticIndex.ObjectMeta.Finalizers, finalizerName) {
 			if r.EnableDelete {
-				if err := elasticsearch.DeleteIndex(*elasticIndex.Spec.IndexName); err != nil {
+				if err := elasticsearch.DeleteIndex(ctx, *elasticIndex.Spec.IndexName); err != nil {
 					log.Error(err, "error while deleting elasticIndex", "indexName", *elasticIndex.Spec.IndexName)
 				}
 			} else {
@@ -169,7 +169,7 @@ func manageIndexFinalizer(elasticIndex elasticv1alpha1.ElasticIndex, elasticsear
 
 			// remove finalizer from the list and update it.
 			elasticIndex.ObjectMeta.Finalizers = utils.RemoveString(elasticIndex.ObjectMeta.Finalizers, finalizerName)
-			if err := r.Update(context.Background(), &elasticIndex); err != nil {
+			if err := r.Update(ctx, &elasticIndex); err != nil {
 				return deleteRequest, err
 			}
 		}
