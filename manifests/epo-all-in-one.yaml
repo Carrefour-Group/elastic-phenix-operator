@@ -293,6 +293,7 @@ webhooks:
     - UPDATE
     resources:
     - elasticindices
+  sideEffects: None
 - clientConfig:
     caBundle: Cg==
     service:
@@ -311,6 +312,7 @@ webhooks:
     - UPDATE
     resources:
     - elastictemplates
+  sideEffects: None
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -561,7 +563,7 @@ spec:
         - --enable-delete
         command:
         - /manager
-        image: carrefourphx/elastic-phenix-operator:0.1.0-RC3
+        image: carrefourphx/elastic-phenix-operator:0.1.0-RC4
         name: manager
         ports:
         - containerPort: 9443
@@ -634,6 +636,7 @@ webhooks:
     - DELETE
     resources:
     - elasticindices
+  sideEffects: None
 - clientConfig:
     caBundle: Cg==
     service:
@@ -653,3 +656,4 @@ webhooks:
     - DELETE
     resources:
     - elastictemplates
+  sideEffects: None
