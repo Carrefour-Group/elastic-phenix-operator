@@ -132,7 +132,9 @@ func (r *ElasticIndexReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func indexStatusUpdated(objectStatus *elasticv1alpha1.ElasticIndexStatus, esStatus *utils.EsStatus, log logr.Logger) bool {
-	if esStatus != nil && objectStatus.Status != esStatus.Status {
+	if esStatus != nil &&
+		(objectStatus.Status != esStatus.Status ||
+			(objectStatus.Status != utils.StatusCreated && objectStatus.Message != esStatus.Message)) {
 		log.Info("update status", "from", objectStatus.Status, "to", esStatus.Status)
 		objectStatus.Status = esStatus.Status
 		objectStatus.HttpCodeStatus = esStatus.HttpCodeStatus
