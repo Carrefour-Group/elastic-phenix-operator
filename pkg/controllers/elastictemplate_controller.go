@@ -88,7 +88,7 @@ func (r *ElasticTemplateReconciler) Reconcile(req ctrl.Request) (ctrl.Result, er
 			return ctrl.Result{RequeueAfter: RetryInterval}, nil
 		}
 		log.Info("create/update ElasticTemplate", "templateName", elasticTemplate.Spec.TemplateName)
-		esStatus, err := elasticsearch.CreateOrUpdateTemplate(ctx, *elasticTemplate.Spec.TemplateName, *elasticTemplate.Spec.Model)
+		esStatus, err := elasticsearch.CreateOrUpdateTemplate(ctx, *elasticTemplate.Spec.TemplateName, *elasticTemplate.Spec.Model, elasticTemplate.Spec.Order)
 		if templateStatusUpdated(&elasticTemplate.Status, esStatus, log) {
 			if err := r.Status().Update(ctx, &elasticTemplate); err != nil {
 				if apierrors.IsConflict(err) {

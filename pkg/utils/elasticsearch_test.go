@@ -292,7 +292,7 @@ func TestElasticsearch_CreateOrUpdateTemplate(t *testing.T) {
 
 	templateName := "k8s_epo_test_create_template"
 
-	status, err := elasticsearch.CreateOrUpdateTemplate(ctx, templateName, `{"index_patterns": ["k8s_epo_test_*"], "mappings": {"properties": {}}}`)
+	status, err := elasticsearch.CreateOrUpdateTemplate(ctx, templateName, `{"index_patterns": ["k8s_epo_test_*"], "mappings": {"properties": {}}}`, nil)
 	assert.Nil(err)
 	assert.Equal("200", status.HttpCodeStatus)
 	assert.True(*elasticsearch.existsTemplate(ctx, templateName))
@@ -306,7 +306,7 @@ func TestElasticsearch_CreateOrUpdateTemplate_WithType(t *testing.T) {
 
 	templateName := "k8s_epo_test_create_template_with_type"
 
-	status, err := elasticsearch.CreateOrUpdateTemplate(ctx, templateName, `{"index_patterns": ["k8s_epo_test_*"], "mappings": {"my-type": {"properties": {}}}}`)
+	status, err := elasticsearch.CreateOrUpdateTemplate(ctx, templateName, `{"index_patterns": ["k8s_epo_test_*"], "mappings": {"my-type": {"properties": {}}}}`, nil)
 	assert.Nil(err)
 	assert.Equal("200", status.HttpCodeStatus)
 	assert.True(*elasticsearch.existsTemplate(ctx, templateName))
@@ -320,7 +320,7 @@ func TestElasticsearch_DeleteTemplate(t *testing.T) {
 
 	templateName := "k8s_epo_test_delete_template"
 
-	status, err := elasticsearch.CreateOrUpdateTemplate(ctx, templateName, `{"index_patterns": ["k8s_epo_test_*"]}`)
+	status, err := elasticsearch.CreateOrUpdateTemplate(ctx, templateName, `{"index_patterns": ["k8s_epo_test_*"]}`, nil)
 	assert.Nil(err)
 	assert.Equal("200", status.HttpCodeStatus)
 	assert.True(*elasticsearch.existsTemplate(ctx, templateName))
