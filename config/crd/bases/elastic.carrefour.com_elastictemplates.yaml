@@ -88,6 +88,9 @@ spec:
               maximum: 500
               minimum: 1
               type: integer
+            order:
+              nullable: true
+              type: integer
             templateName:
               pattern: ^[a-z0-9-_\.]+$
               type: string
