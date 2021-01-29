@@ -24,7 +24,6 @@ webhooks:
     - UPDATE
     resources:
     - elasticindices
-  sideEffects: None
 - clientConfig:
     caBundle: Cg==
     service:
@@ -43,7 +42,6 @@ webhooks:
     - UPDATE
     resources:
     - elastictemplates
-  sideEffects: None
 
 ---
 apiVersion: admissionregistration.k8s.io/v1beta1
@@ -71,7 +69,6 @@ webhooks:
     - DELETE
     resources:
     - elasticindices
-  sideEffects: None
 - clientConfig:
     caBundle: Cg==
     service:
@@ -91,4 +88,3 @@ webhooks:
     - DELETE
     resources:
     - elastictemplates
-  sideEffects: None

@@ -4,3 +4,7 @@ resources:
 
 configurations:
 - kustomizeconfig.yaml
+
+patchesStrategicMerge:
+  - patches/mutating_webhook.yaml
+  - patches/validating_webhook.yaml
