@@ -358,14 +358,14 @@ func (es *Elasticsearch) DeleteIndex(ctx context.Context, indexName string) erro
 	return nil
 }
 
-func (es *Elasticsearch) CreateOrUpdateTemplate(ctx context.Context, templateName string, model string) (*EsStatus, error) {
+func (es *Elasticsearch) CreateOrUpdateTemplate(ctx context.Context, templateName string, model string, order *int) (*EsStatus, error) {
 	ctx, cancel := context.WithTimeout(ctx, ElasticMainFnTimeout)
 	defer cancel()
 
 	exists := es.existsTemplate(ctx, templateName)
 
 	shouldIncludeTypeName := (&EsModel{Model: model}).IsMappingWithType()
-	response, err := esapi.IndicesPutTemplateRequest{Name: templateName, Body: strings.NewReader(model), IncludeTypeName: shouldIncludeTypeName}.Do(ctx, es.Client)
+	response, err := esapi.IndicesPutTemplateRequest{Name: templateName, Body: strings.NewReader(model), IncludeTypeName: shouldIncludeTypeName, Order: order}.Do(ctx, es.Client)
 	if err != nil || exists == nil {
 		es.log.Error(err, "error while creating template", "templateName", templateName)
 		return &EsStatus{Status: StatusError, Message: err.Error()}, err

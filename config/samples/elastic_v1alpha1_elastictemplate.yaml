@@ -11,25 +11,24 @@ spec:
       key: uri
   numberOfShards: 5
   numberOfReplicas: 3
+  order: 1
   model: |-
     {
       "index_patterns": ["invoice*"],
       "settings": {
       },
       "mappings": {
-        "_doc": {
-          "_source": {
-            "enabled": true
+        "_source": {
+          "enabled": true
+        },
+        "properties": {
+          "key": {
+            "type": "keyword",
+            "index": true
           },
-          "properties": {
-            "key": {
-              "type": "keyword",
-              "index": true
-            },
-            "content": {
-              "type": "text",
-              "index": true
-            }
+          "content": {
+            "type": "text",
+            "index": true
           }
         }
       }

@@ -44,6 +44,10 @@ type ElasticTemplateSpec struct {
 	// +kubebuilder:validation:Required
 	NumberOfReplicas *int32 `json:"numberOfReplicas"`
 
+	// +optional
+	// +nullable
+	Order *int `json:"order,omitempty"`
+
 	// +kubebuilder:validation:Required
 	Model *string `json:"model"`
 }

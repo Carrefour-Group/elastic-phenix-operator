@@ -82,20 +82,18 @@ spec:
       "settings": {
       },
       "mappings": {
-        "_doc": {
-          "_source": {
-            "enabled": true
+        "_source": {
+          "enabled": true
+        },
+        "dynamic": false,
+        "properties": {
+          "barcode": {
+            "type": "keyword",
+            "index": true
           },
-          "dynamic": false,
-          "properties": {
-            "barcode": {
-              "type": "keyword",
-              "index": true
-            },
-            "description": {
-              "type": "text",
-              "index": true
-            }
+          "description": {
+            "type": "text",
+            "index": true
           }
         }
       }
@@ -118,25 +116,24 @@ spec:
       name: elasticsearch-cluster-secret
   numberOfShards: 5
   numberOfReplicas: 3
+  order: 1
   model: |-
     {
       "index_patterns": ["invoice*"],
       "settings": {
       },
       "mappings": {
-        "_doc": {
-          "_source": {
-            "enabled": true
+        "_source": {
+          "enabled": true
+        },
+        "properties": {
+          "key": {
+            "type": "keyword",
+            "index": true
           },
-          "properties": {
-            "key": {
-              "type": "keyword",
-              "index": true
-            },
-            "content": {
-              "type": "text",
-              "index": true
-            }
+          "content": {
+            "type": "text",
+            "index": true
           }
         }
       }
@@ -222,20 +219,18 @@ spec:
         "numberOfReplicas": 3
       },
       "mappings": {
-        "_doc": {
-          "_source": {
-            "enabled": true
+        "_source": {
+          "enabled": true
+        },
+        "dynamic": false,
+        "properties": {
+          "barcode": {
+            "type": "keyword",
+            "index": true
           },
-          "dynamic": false,
-          "properties": {
-            "barcode": {
-              "type": "keyword",
-              "index": true
-            },
-            "description": {
-              "type": "text",
-              "index": true
-            }
+          "description": {
+            "type": "text",
+            "index": true
           }
         }
       }
@@ -264,20 +259,18 @@ spec:
         "numberOfShards": 6
       },
       "mappings": {
-        "_doc": {
-          "_source": {
-            "enabled": true
+        "_source": {
+          "enabled": true
+        },
+        "dynamic": false,
+        "properties": {
+          "barcode": {
+            "type": "keyword",
+            "index": true
           },
-          "dynamic": false,
-          "properties": {
-            "barcode": {
-              "type": "keyword",
-              "index": true
-            },
-            "description": {
-              "type": "text",
-              "index": true
-            }
+          "description": {
+            "type": "text",
+            "index": true
           }
         }
       }
@@ -317,7 +310,7 @@ Spec:
   ...
 Status:
   Http Code Status:  400
-  Message:           [400 Bad Request] {"error":{"root_cause":[{"type":"mapper_parsing_exception","reason":"Root mapping definition has unsupported parameters:  [dynamicc : false]"}],"type":"mapper_parsing_exception","reason":"Failed to parse mapping [_doc]: Root mapping definition has unsupported parameters:  [dynamicc : false]","caused_by":{"type":"mapper_parsing_exception","reason":"Root mapping definition has unsupported parameters:  [dynamicc : false]"}},"status":400}
+  Message:           [400 Bad Request] {"error":{"root_cause":[{"type":"mapper_parsing_exception","reason":"Root mapping definition has unsupported parameters:  [dynamicc : false]"}],"type":"mapper_parsing_exception","reason":"Failed to parse mapping: Root mapping definition has unsupported parameters:  [dynamicc : false]","caused_by":{"type":"mapper_parsing_exception","reason":"Root mapping definition has unsupported parameters:  [dynamicc : false]"}},"status":400}
   Status:            Error
 ```
 
