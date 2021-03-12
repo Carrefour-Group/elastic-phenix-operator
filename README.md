@@ -1,6 +1,40 @@
-# elastic-phenix-operator
+<p align="center"><img src="logo.png" width="200x" /></p>
+<p><div align="center"><h1>elastic-phenix-operator</h1></div></p>
+<p align="center">
+<a href="https://goreportcard.com/report/github.com/Carrefour-Group/elastic-phenix-operator"><img alt="Go Report Card" src="https://goreportcard.com/badge/github.com/Carrefour-Group/elastic-phenix-operator" /></a>
+<a href="https://github.com/Carrefour-Group/elastic-phenix-operator/releases/tag/v0.1.0"><img alt="Release" src="https://img.shields.io/badge/release-v0.1.0-blue" /></a>
+<a href="https://hub.docker.com/r/carrefourphx/elastic-phenix-operator/tags?page=1&ordering=last_updated"><img alt="Docker" src="https://img.shields.io/badge/docker-tags-orange" /></a>
+<a href="https://opensource.org/licenses/Apache-2.0"><img alt="License" src="https://img.shields.io/badge/License-Apache%202.0-green.svg" /></a>
+</p>
 
-`elastic-phenix-operator` is a kubernetes operator to manage elasticsearch Indices and Templates.
+# Overview
+
+`elastic-phenix-operator` is a kubernetes operator to manage `elasticsearch` Indices and Templates.
+
+# Contents
+- [Kubernetes Domain, Group and Kinds](#kubernetes-domain-group-and-kinds)
+- [Quick Start](#quick-start)
+  * [Creating a kubernetes cluster](#creating-a-kubernetes-cluster)
+  * [Install prerequisites](#install-prerequisites)
+  * [Creating an elasticsearch cluster](#creating-an-elasticsearch-cluster)
+  * [Install elastic-phenix-operator](#install-elastic-phenix-operator)
+  * [Creating a secret for connection URL](#creating-a-secret-for-connection-url)
+  * [Creating an elasticindex](#creating-an-elasticindex)
+  * [Creating an elastictemplate](#creating-an-elastictemplate)
+  * [Get created objects and debugging](#get-created-objects-and-debugging)
+  * [Deleting elasticindex, elastictemplate with annotation](#deleting-elasticindex-elastictemplate-with-annotation)
+- [Architecture](#architecture)
+- [Operator features](#operator-features)
+- [Operator arguments](#operator-arguments)
+- [Release artifacts](#release-artifacts)
+- [Validations](#validations)
+  * [Syntactic validation](#syntactic-validation)
+  * [Semantic validation](#semantic-validation)
+    + [on creation](#on-creation)
+    + [on update](#on-update)
+    + [on delete](#on-delete)
+- [Mutation](#mutation)
+- [Add new kind to elastic-phenix-operator](#add-new-kind-to-elastic-phenix-operator)
 
 # Kubernetes Domain, Group and Kinds
 
@@ -13,67 +47,142 @@
 - `ElasticIndex`: manage elasticsearch indices lifecycle `create`, `update` and `delete`
 - `ElasticTemplate`: manage elasticsearch templates lifecycle `create`, `update` and `delete`
 
-# Architecture
+# Quick Start
 
-![elastic-phenix-operator](elastic-phenix-operator.png)
+## Creating a kubernetes cluster
 
-# Operator features
+You can use `kind` to run a kubernetes cluster in your machine. For more information: https://kind.sigs.k8s.io/docs/user/quick-start/
 
-`elastic-phenix-operator` is compatible with `elasticsearch 6` and `elasticsearch 7` servers.
+Create a cluster:
 
-It is possible to create `ElasticIndex` and `ElasticTemplate` objects:
+```
+kind create cluster --image=kindest/node:v1.17.0
+```
 
-- for new `index` / `template`
-- on existing `index` / `template`, in this case your kubernetes object defintion should be compatible with existing `index` / `template`, otherwise you will get a kuberenetes object created with `Error` status
+## Install prerequisites
 
-To protect sensitive data, elasticsearch server URI should be provided from a secret when creating `ElasticIndex` and `ElasticTemplate` objects.
+`Cert-manager` is needed to handle TLS certificate for admission webhook servers. You need `cert-manager` version `v0.15.2` or above. For more information: https://github.com/jetstack/cert-manager/
 
-# Operator arguments
+To install `cert-manager`:
 
-You can customise `elastic-phenix-operator` behavior using these `manager` arguments:
+```
+kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.1.1/cert-manager.yaml
+```
 
-- `namespaces`: create a cache on namespaces and watch only these namespace (defaults to all namespaces)
-- `namespaces-regex-filter`: watch all namespaces and filter before reconciliation process (defaults to no filter applied)
+You should wait until the `cert-manager` becomes in running state:
 
-# Release artifacts
+```
+kubectl wait --for=condition=Ready --timeout=-1s --all pods -n cert-manager
+```
 
-When releasing `elastic-phenix-operator`, two artifacts are released:
+You can use `ECK` (Elastic Cloud on Kubernetes) to create an elasticsearch cluster in kubernetes. For more information: https://www.elastic.co/guide/en/cloud-on-k8s/master/k8s-overview.html
 
-- a docker image containing `elastic-phenix-operator` manager embedding `ElasticIndex` and `ElasticTemplate` controllers.
-- an all-in-one kubernetes manifest file located at `manifest/epo-all-in-one.yaml` that defines all kubernetes objects needed to install and run the `elastic-phenix-operator`: `CustoResourceDefinition`, `Namespace`, `Deployment`, `Service`, `MutatingWebhookConfiguration`, `ValidatingWebhookConfiguration`, `Role`, `ClusterRole`, `RoleBinding`, `ClusterRoleBinding`, `Certificate`
+To install `ECK`:
 
-# Create your first ElasticIndex and ElasticTemplate
+```
+kubectl apply -f https://download.elastic.co/downloads/eck/1.3.0/all-in-one.yaml
+```
+
+You should wait until the `ECK` operator becomes in running state:
+
+```
+kubectl wait --for=condition=Ready --timeout=-1s --all pods -n elastic-system
+```
+
+## Creating an elasticsearch cluster
+
+You can create a single node `Elasticsearch` cluster:
+
+```
+cat <<EOF | kubectl apply -n elastic-system -f -
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: elastic-system
+spec:
+  version: 7.9.2
+  nodeSets:
+  - name: default
+    count: 1
+    config:
+      node.master: true
+      node.data: true
+      node.ingest: true
+      node.store.allow_mmap: false
+      xpack.security.authc:
+        anonymous:
+          username: anonymous_user
+          roles: superuser
+          authz_exception: false
+  http:
+    service:
+      spec:
+        type: ClusterIP
+    tls:
+      selfSignedCertificate:
+        disabled: true
+        subjectAltNames:
+          - dns: localhost,127.0.0.1
+EOF
+```
+
+You should wait until the `elasticsearch` cluster becomes in running state:
+
+```
+kubectl wait --for=condition=Ready --timeout=-1s --all pods -n elastic-system
+```
+
+## Install elastic-phenix-operator
+
+To install `EPO` (`elastic-phenix-operator`):
+
+```
+kubectl apply -f https://raw.githubusercontent.com/Carrefour-Group/elastic-phenix-operator/v0.1.0/manifests/epo-all-in-one.yaml
+```
+
+You should wait until `elastic-phenix-operator` becomes in running state:
+
+```
+kubectl wait --for=condition=Ready --timeout=-1s --all pods -n elastic-phenix-operator-system
+```
+
+## Creating a secret for connection URL
 
 You can find samples located at `config/samples`.
 
 Before creating an `ElasticIndex` or an `ElasticTemplate`, you should create a secret containing elasticsearch uri that respects this pattern: `<scheme>://<user>:<password>@<hostname>:<port>` e.g. `http://localhost:9200`, `https://elastic:pass@myshost:9200`
 
 ```
+cat <<EOF | kubectl apply -n elastic-phenix-operator-system -f -
 apiVersion: v1
 kind: Secret
 metadata:
   name: elasticsearch-cluster-secret
-  namespace: elasticsearch-dev
+  namespace: elastic-phenix-operator-system
 type: Opaque
 stringData:
-  uri: http://elastic:mypass@elasticsearchhost:9200
+  uri: http://elastic-system-es-http.elastic-system.svc:9200
+EOF
 ```
 
-Then create an `ElasticIndex` and you should reference the elasticsearch server URI from the secret created before:
+## Creating an elasticindex
+
+When creating an `ElasticIndex`, you should reference the elasticsearch server URI from the secret created before:
 **/!\\ Secret should be in the same namespace, otherwise you will get an error /!\\**
 
 ```
+cat <<EOF | kubectl apply -n elastic-phenix-operator-system -f -
 apiVersion: elastic.carrefour.com/v1alpha1
 kind: ElasticIndex
 metadata:
-  name: product-index
-  namespace: elasticsearch-dev
+  name: invoice-template
+  namespace: elastic-phenix-operator-system
 spec:
   indexName: product
   elasticURI:
     secretKeyRef:
-      key: uri
       name: elasticsearch-cluster-secret
+      key: uri
   numberOfShards: 6
   numberOfReplicas: 1
   model: |-
@@ -97,24 +206,29 @@ spec:
         }
       }
     }
+EOF
 ```
 
-An example of an `ElasticTemplate`:
+## Creating an elastictemplate
+
+When creating an `ElasticTemplate`, you should reference the elasticsearch server URI from the secret created before:
+**/!\\ Secret should be in the same namespace, otherwise you will get an error /!\\**
 
 ```
+cat <<EOF | kubectl apply -n elastic-phenix-operator-system -f -
 apiVersion: elastic.carrefour.com/v1alpha1
 kind: ElasticTemplate
 metadata:
   name: invoice-template
-  namespace: elasticsearch-dev
+  namespace: elastic-phenix-operator-system
 spec:
   templateName: invoice
   elasticURI:
     secretKeyRef:
-      key: uri
       name: elasticsearch-cluster-secret
+      key: uri
   numberOfShards: 5
-  numberOfReplicas: 3
+  numberOfReplicas: 1
   order: 1
   model: |-
     {
@@ -137,7 +251,102 @@ spec:
         }
       }
     }
+EOF
 ```
+
+## Get created objects and debugging
+
+To get created object, you can use `kubectl` cli:
+
+```
+> kubectl get elasticindex -n elastic-phenix-operator-system
+
+NAME            INDEX_NAME   SHARDS   REPLICAS   STATUS    AGE
+product-index   product      6        1          Created   24m
+city-index      city         4        3          Error     21m
+
+
+> kubectl get elastictemplate -n elastic-phenix-operator-system
+
+NAME                TEMPLATE_NAME   SHARDS   REPLICAS   STATUS    AGE
+invoice-template    invoice         5        3          Created   9m
+```
+
+You can also check indices and templates in `elasticsearch` cluster:
+
+```
+kubectl exec -it pod/elastic-system-es-default-0 -n elastic-system -- curl "localhost:9200/_cat/indices/product?v"
+kubectl exec -it pod/elastic-system-es-default-0 -n elastic-system -- curl "localhost:9200/_cat/templates/invoice?v"
+```
+
+When you have an `elasticindex`/`elastictemplate` with `Error` status, use `kubectl describe` to get more details:
+
+```
+> kubectl describe elasticindex/city-index -n mynamespace
+
+Name:         city-index
+Namespace:    elasticsearch-dev
+Annotations:  API Version:  elastic.carrefour.com/v1alpha1
+Kind:         ElasticIndex
+Metadata:
+  ...
+Spec:
+  ...
+Status:
+  Http Code Status:  400
+  Message:           [400 Bad Request] {"error":{"root_cause":[{"type":"mapper_parsing_exception","reason":"Root mapping definition has unsupported parameters:  [dynamicc : false]"}],"type":"mapper_parsing_exception","reason":"Failed to parse mapping: Root mapping definition has unsupported parameters:  [dynamicc : false]","caused_by":{"type":"mapper_parsing_exception","reason":"Root mapping definition has unsupported parameters:  [dynamicc : false]"}},"status":400}
+  Status:            Error
+```
+
+## Deleting elasticindex, elastictemplate with annotation
+
+When you delete an `ElasticIndex`/`ElasticTemplate` kubernetes object, the `index`/`template` in `elasticsearch` cluster will remain existing.
+
+```
+kubectl delete elastictemplate/invoice-template -n elastic-phenix-operator-system
+kubectl delete elasticindex/product-index -n elastic-phenix-operator-system
+```
+
+If you want to delete the `index`/`template` in `elasticsearch` cluster too, you should add the annotation `carrefour.com/delete-in-cluster=true` to your kubernetes object.
+
+```
+kubectl annotate elastictemplate/invoice-template carrefour.com/delete-in-cluster=true -n elastic-phenix-operator-system
+kubectl annotate elasticindex/product-index carrefour.com/delete-in-cluster=true -n elastic-phenix-operator-system
+```
+
+Now, when you delete your `ElasticIndex`/`ElasticTemplate` kubernetes object, elasticsearch `index`/`template` will be deleted too from `elasticsearch` cluster.
+
+**/!\\ For indices deletion, you will lose indices data in elasticsearch cluster /!\\**
+
+# Architecture
+
+![elastic-phenix-operator](elastic-phenix-operator.png)
+
+# Operator features
+
+`elastic-phenix-operator` is compatible with `elasticsearch 6` and `elasticsearch 7` servers.
+
+It is possible to create `ElasticIndex` and `ElasticTemplate` objects:
+
+- for new `index` / `template`
+- on existing `index` / `template`, in this case your kubernetes object defintion should be compatible with existing `index` / `template`, otherwise you will get a kuberenetes object created with `Error` status
+
+To protect sensitive data, elasticsearch server URI should be provided from a secret when creating `ElasticIndex` and `ElasticTemplate` objects.
+
+
+# Operator arguments
+
+You can customise `elastic-phenix-operator` behavior using these `manager` arguments:
+
+- `namespaces`: create a cache on namespaces and watch only these namespace (defaults to all namespaces)
+- `namespaces-regex-filter`: watch all namespaces and filter before reconciliation process (defaults to no filter applied)
+
+# Release artifacts
+
+When releasing `elastic-phenix-operator`, two artifacts are generated:
+
+- a docker image containing `elastic-phenix-operator` manager embedding `ElasticIndex` and `ElasticTemplate` controllers. All docker images are published in docker hub: https://hub.docker.com/r/carrefourphx/elastic-phenix-operator
+- an all-in-one kubernetes manifest file located at `manifest/epo-all-in-one.yaml` that defines all kubernetes objects needed to install and run the `elastic-phenix-operator`: `CustoResourceDefinition`, `Namespace`, `Deployment`, `Service`, `MutatingWebhookConfiguration`, `ValidatingWebhookConfiguration`, `Role`, `ClusterRole`, `RoleBinding`, `ClusterRoleBinding`, `Certificate`
 
 # Validations
 
@@ -275,63 +484,6 @@ spec:
       }
     }
 ```
-
-# Get created objects and debugging
-
-To get created object, you can use `kubectl` cli:
-
-```
-> kubectl get elasticindex -n mynamespace
-
-NAME            INDEX_NAME   SHARDS   REPLICAS   STATUS    AGE
-product-index   product      6        1          Created   24m
-city-index      city         4        3          Error     21m
-
-
-> kubectl get elastictemplate -n mynamespace
-
-NAME                TEMPLATE_NAME   SHARDS   REPLICAS   STATUS    AGE
-invoice-template    invoice         5        3          Created   9m
-```
-
-When you have an `elasticindex`/`elastictemplate` with `Error` status, use `kubectl describe` to get more details:
-
-```
-> kubectl describe elasticindex/city-index -n mynamespace
-
-Name:         city-index
-Namespace:    elasticsearch-dev
-Annotations:  API Version:  elastic.carrefour.com/v1alpha1
-Kind:         ElasticIndex
-Metadata:
-  ...
-Spec:
-  ...
-Status:
-  Http Code Status:  400
-  Message:           [400 Bad Request] {"error":{"root_cause":[{"type":"mapper_parsing_exception","reason":"Root mapping definition has unsupported parameters:  [dynamicc : false]"}],"type":"mapper_parsing_exception","reason":"Failed to parse mapping: Root mapping definition has unsupported parameters:  [dynamicc : false]","caused_by":{"type":"mapper_parsing_exception","reason":"Root mapping definition has unsupported parameters:  [dynamicc : false]"}},"status":400}
-  Status:            Error
-```
-
-# Deleting elasticindex, elastictemplate with annotation
-
-When you delete an `ElasticIndex`/`ElasticTemplate` kubernetes object, the `index`/`template` in `elasticsearch` cluster will remain existing.
-
-```
-kubectl delete elastictemplate/invoice-template -n elastic-phenix-operator-system
-kubectl delete elasticindex/product-index -n elastic-phenix-operator-system
-```
-
-If you want to delete the `index`/`template` in `elasticsearch` cluster too, you should add the annotation `carrefour.com/delete-in-cluster=true` to your kubernetes object.
-
-```
-kubectl annotate elastictemplate/invoice-template carrefour.com/delete-in-cluster=true -n elastic-phenix-operator-system
-kubectl annotate elasticindex/product-index carrefour.com/delete-in-cluster=true -n elastic-phenix-operator-system
-```
-
-Now, when you delete your `ElasticIndex`/`ElasticTemplate` kubernetes object, elasticsearch `index`/`template` will be deleted too from `elasticsearch` cluster.
-
-**/!\\ For indices deletion, you will lose indices data in elasticsearch cluster /!\\**
 
 # Add new kind to elastic-phenix-operator
 
