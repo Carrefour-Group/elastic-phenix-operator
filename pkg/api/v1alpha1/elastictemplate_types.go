@@ -68,6 +68,7 @@ type ElasticTemplateStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:resource:shortName=et
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="TEMPLATE_NAME",type="string",JSONPath=".spec.templateName"
 // +kubebuilder:printcolumn:name="SHARDS",type="integer",JSONPath=".spec.numberOfShards"

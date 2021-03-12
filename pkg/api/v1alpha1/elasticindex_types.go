@@ -64,6 +64,7 @@ type ElasticIndexStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:resource:shortName=ei
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="INDEX_NAME",type="string",JSONPath=".spec.indexName"
 // +kubebuilder:printcolumn:name="SHARDS",type="integer",JSONPath=".spec.numberOfShards"
