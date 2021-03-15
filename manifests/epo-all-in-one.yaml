@@ -43,6 +43,8 @@ spec:
     kind: ElasticIndex
     listKind: ElasticIndexList
     plural: elasticindices
+    shortNames:
+    - ei
     singular: elasticindex
   preserveUnknownFields: false
   scope: Namespaced
@@ -174,6 +176,8 @@ spec:
     kind: ElasticTemplate
     listKind: ElasticTemplateList
     plural: elastictemplates
+    shortNames:
+    - et
     singular: elastictemplate
   preserveUnknownFields: false
   scope: Namespaced
