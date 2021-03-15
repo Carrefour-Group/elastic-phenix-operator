@@ -35,7 +35,6 @@ type ElasticTemplateReconciler struct {
 	Log                   logr.Logger
 	Scheme                *runtime.Scheme
 	NamespacesRegexFilter string
-	EnableDelete          bool
 }
 
 // +kubebuilder:rbac:groups=elastic.carrefour.com,resources=elastictemplates,verbs=get;list;watch;create;update;patch;delete
@@ -166,12 +165,12 @@ func manageTemplateFinalizer(ctx context.Context, elasticTemplate elasticv1alpha
 		log.Info("elastictemplate is being deleted")
 		deleteRequest = true
 		if utils.ContainsString(elasticTemplate.ObjectMeta.Finalizers, finalizerName) {
-			if r.EnableDelete {
+			if elasticTemplate.Annotations[DeleteInClusterAnnotation] == "true" {
 				if err := elasticsearch.DeleteTemplate(ctx, *elasticTemplate.Spec.TemplateName); err != nil {
 					log.Error(err, "error while deleting elasticTemplate", "templateName", *elasticTemplate.Spec.TemplateName)
 				}
 			} else {
-				log.Info("elastictemplate deletion will not delete elasticsearch template", "templateName", *elasticTemplate.Spec.TemplateName, "enable-delete flag", r.EnableDelete)
+				log.Info("elastictemplate deletion will not delete elasticsearch template", "templateName", *elasticTemplate.Spec.TemplateName)
 			}
 
 			// remove finalizer from the list and update it.

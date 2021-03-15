@@ -34,7 +34,6 @@ type ElasticIndexReconciler struct {
 	Log                   logr.Logger
 	Scheme                *runtime.Scheme
 	NamespacesRegexFilter string
-	EnableDelete          bool
 }
 
 // +kubebuilder:rbac:groups=elastic.carrefour.com,resources=elasticindices,verbs=get;list;watch;create;update;patch;delete
@@ -161,12 +160,12 @@ func manageIndexFinalizer(ctx context.Context, elasticIndex elasticv1alpha1.Elas
 		log.Info("elasticindex is being deleted")
 		deleteRequest = true
 		if utils.ContainsString(elasticIndex.ObjectMeta.Finalizers, finalizerName) {
-			if r.EnableDelete {
+			if elasticIndex.Annotations[DeleteInClusterAnnotation] == "true" {
 				if err := elasticsearch.DeleteIndex(ctx, *elasticIndex.Spec.IndexName); err != nil {
 					log.Error(err, "error while deleting elasticIndex", "indexName", *elasticIndex.Spec.IndexName)
 				}
 			} else {
-				log.Info("elasticindex deletion will not delete elasticsearch index", "indexName", *elasticIndex.Spec.IndexName, "enable-delete flag", r.EnableDelete)
+				log.Info("elasticindex deletion will not delete elasticsearch index", "indexName", *elasticIndex.Spec.IndexName)
 			}
 
 			// remove finalizer from the list and update it.

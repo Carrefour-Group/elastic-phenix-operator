@@ -21,4 +21,5 @@ import (
 const (
 	RetryInterval time.Duration = time.Second * 30
 	ErrorInterval time.Duration = time.Minute * 5
+	DeleteInClusterAnnotation = "carrefour.com/delete-in-cluster"
 )

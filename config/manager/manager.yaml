@@ -27,7 +27,6 @@ spec:
         - /manager
         args:
         - --enable-leader-election
-        - --enable-delete
         image: controller:latest
         name: manager
         resources:
