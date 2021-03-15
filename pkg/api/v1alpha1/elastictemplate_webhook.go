@@ -16,8 +16,8 @@ package v1alpha1
 
 import (
 	"context"
-	"github.com/Carrefour-Group/elastic-phenix-operator/pkg/utils"
 	"fmt"
+	"github.com/Carrefour-Group/elastic-phenix-operator/pkg/utils"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -90,7 +90,7 @@ func (r *ElasticTemplate) ValidateCreate() error {
 				allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("elasticUri").Child("secretKeyRef"), string(secret.Data[secretKey]), errMsg))
 			} else {
 				if info, err := checkEsTemplateExists(*r.Spec.TemplateName, esConfig, elastictemplateK8sClient); err != nil {
-					errMsg := fmt.Sprintf(`error while checking template "%v" existance from all kubernetes elastictemplate objects. %v`, r.Spec.TemplateName, err.Error())
+					errMsg := fmt.Sprintf(`error while checking template "%v" existence from all kubernetes elastictemplate objects. %v`, r.Spec.TemplateName, err.Error())
 					allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("templateName"), r.Spec.TemplateName, errMsg))
 				} else if info != nil {
 					errMsg := fmt.Sprintf(`template "%v" for elasticsearch URI "%v:%v" was created by kubernetes elastictemplate "%v" in namespace "%v"`, info.esObjectName, info.Host, info.Port, info.Name, info.Namespace)
@@ -106,10 +106,10 @@ func (r *ElasticTemplate) ValidateCreate() error {
 		return apierrors.NewInvalid(
 			schema.GroupKind{Group: "elastic.carrefour.com", Kind: "ElasticTemplate"},
 			r.Name, allErrs)
-	} else {
-		elastictemplatelog.Info("[Webhook] ignore validate create", "namespace", r.Namespace, "name", r.Name)
-		return nil
 	}
+
+	elastictemplatelog.Info("[Webhook] ignore validate create", "namespace", r.Namespace, "name", r.Name)
+	return nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
@@ -142,10 +142,10 @@ func (r *ElasticTemplate) ValidateUpdate(old runtime.Object) error {
 		return apierrors.NewInvalid(
 			schema.GroupKind{Group: "elastic.carrefour.com", Kind: "ElasticTemplate"},
 			r.Name, allErrs)
-	} else {
-		elastictemplatelog.Info("[Webhook] ignore validate update", "namespace", r.Namespace, "name", r.Name)
-		return nil
 	}
+
+	elastictemplatelog.Info("[Webhook] ignore validate update", "namespace", r.Namespace, "name", r.Name)
+	return nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
@@ -167,10 +167,10 @@ func (r *ElasticTemplate) ValidateDelete() error {
 		return apierrors.NewInvalid(
 			schema.GroupKind{Group: "elastic.carrefour.com", Kind: "ElasticTemplate"},
 			r.Name, allErrs)
-	} else {
-		elastictemplatelog.Info("[Webhook] ignore validate delete", "namespace", r.Namespace, "name", r.Name)
-		return nil
 	}
+
+	elastictemplatelog.Info("[Webhook] ignore validate delete", "namespace", r.Namespace, "name", r.Name)
+	return nil
 }
 
 func checkEsTemplateExists(templateName string, esConfig *utils.EsConfig, k8sClient client.Client) (*EsObjectInfo, error) {

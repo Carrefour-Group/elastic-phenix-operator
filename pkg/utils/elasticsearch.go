@@ -50,22 +50,24 @@ func (conf EsConfig) String() string {
 }
 
 func (conf *EsConfig) FromURI(rawurl string) (*EsConfig, error) {
-	if u, err := url.Parse(rawurl); err != nil {
+	u, err := url.Parse(rawurl)
+	if err != nil {
 		return nil, err
-	} else {
-		var esConfig *EsConfig
-		if u.User != nil {
-			password, _ := u.User.Password()
-			esConfig = &EsConfig{Scheme: u.Scheme, Host: u.Hostname(), Port: u.Port(), Username: u.User.Username(), Password: password}
-		} else {
-			esConfig = &EsConfig{Scheme: u.Scheme, Host: u.Hostname(), Port: u.Port()}
-		}
-		if esConfig.Host == "" {
-			return nil, errors.New(fmt.Sprintf("Cannot retrieve host from rawurl %v", rawurl))
-		} else {
-			return esConfig, nil
-		}
 	}
+
+	var esConfig *EsConfig
+	if u.User != nil {
+		password, _ := u.User.Password()
+		esConfig = &EsConfig{Scheme: u.Scheme, Host: u.Hostname(), Port: u.Port(), Username: u.User.Username(), Password: password}
+	} else {
+		esConfig = &EsConfig{Scheme: u.Scheme, Host: u.Hostname(), Port: u.Port()}
+	}
+
+	if esConfig.Host == "" {
+		return nil, fmt.Errorf("Cannot retrieve host from rawurl %v", rawurl)
+	}
+
+	return esConfig, nil
 }
 
 type EsStatus struct {
@@ -351,7 +353,7 @@ func (es *Elasticsearch) DeleteIndex(ctx context.Context, indexName string) erro
 
 	if !is2xxStatusCode(response.StatusCode) {
 		es.log.Error(nil, "error while deleting index", "indexName", indexName, "http-response", response)
-		return errors.New(fmt.Sprintf("error while deleting index %v: %v", indexName, response))
+		return fmt.Errorf("error while deleting index %v: %v", indexName, response)
 	}
 
 	es.log.Info("index was deleted successfully", "indexName", indexName)
@@ -409,7 +411,7 @@ func (es *Elasticsearch) DeleteTemplate(ctx context.Context, templateName string
 
 	if !is2xxStatusCode(response.StatusCode) {
 		es.log.Error(nil, "error while deleting template", "templateName", templateName, "http-response", response)
-		return errors.New(fmt.Sprintf("error while deleting template %v: %v", templateName, response))
+		return fmt.Errorf("error while deleting template %v: %v", templateName, response)
 	}
 
 	es.log.Info("template was deleted successfully", "templateName", templateName)

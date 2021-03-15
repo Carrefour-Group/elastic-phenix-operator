@@ -16,7 +16,6 @@ package utils
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strconv"
 
@@ -31,9 +30,9 @@ func IsValidUpdateProperties(oldProperties string, newProperties string) bool {
 
 		return len(newPropKeys) >= len(oldPropKeys) &&
 			len(funk.IntersectString(oldPropKeys, newPropKeys)) == len(oldPropKeys)
-	} else {
-		return false
 	}
+
+	return false
 }
 
 type EsModel struct {
@@ -58,11 +57,12 @@ func (m *EsModel) AddSettings(replicas int32, shards int32) (string, error) {
 		settingsMap["number_of_shards"] = shards
 	}
 
-	if js, err := json.Marshal(result); err != nil {
+	js, err := json.Marshal(result)
+	if err != nil {
 		return "", err
-	} else {
-		return string(js), nil
 	}
+
+	return string(js), nil
 }
 
 func (m *EsModel) GetNumberOfShards() (*int32, error) {
@@ -78,10 +78,9 @@ func (m *EsModel) GetProperties() *string {
 	if isMappingWithType != nil && *isMappingWithType {
 		path := "mappings.*.properties"
 		return getPropertiesFromPath(path, m.Model)
-	} else {
-		path := "mappings.properties"
-		return getPropertiesFromPath(path, m.Model)
 	}
+	path := "mappings.properties"
+	return getPropertiesFromPath(path, m.Model)
 }
 
 func (m *EsModel) IsMappingWithType() *bool {
@@ -113,22 +112,22 @@ func (m *EsModel) IsValid(mType string) (bool, error) {
 
 	var result map[string]interface{}
 	if err := json.Unmarshal([]byte(m.Model), &result); err != nil {
-		return false, errors.New(fmt.Sprintf("%v model is not a valid json", mType))
+		return false, fmt.Errorf("%v model is not a valid json", mType)
 	}
 
 	keys := funk.Keys(result).([]string)
 
 	if len(keys) > len(keywords) {
-		return false, errors.New(fmt.Sprintf("%v model should contain at most these fields %v", mType, keywords))
+		return false, fmt.Errorf("%v model should contain at most these fields %v", mType, keywords)
 	}
 
 	if requiredField != "" && !funk.ContainsString(keys, requiredField) {
-		return false, errors.New(fmt.Sprintf("%v model should contain required field %v", mType, requiredField))
+		return false, fmt.Errorf("%v model should contain required field %v", mType, requiredField)
 	}
 
 	for _, k := range keys {
 		if !funk.ContainsString(keywords, k) {
-			return false, errors.New(fmt.Sprintf("%v model should contain only fields from this list %v", mType, keywords))
+			return false, fmt.Errorf("%v model should contain only fields from this list %v", mType, keywords)
 		}
 	}
 
@@ -143,7 +142,6 @@ func (s *EsSettings) GetNumberOfShards(indexName string) (*int32, error) {
 	path := fmt.Sprintf("%v.settings.index.number_of_shards", indexName)
 	return getIntFromPath(s.Settings, path)
 }
-
 
 func (s *EsSettings) GetNumberOfReplicas(indexName string) (*int32, error) {
 	path := fmt.Sprintf("%v.settings.index.number_of_replicas", indexName)
@@ -161,15 +159,14 @@ func (m EsMappings) GetProperties(indexName string) *string {
 
 func getIntFromPath(json string, path string) (*int32, error) {
 	if maybeValue := gjson.Get(json, path); maybeValue.Exists() {
-		if valueToReturn, err := strconv.Atoi(maybeValue.String()); err != nil {
+		valueToReturn, err := strconv.Atoi(maybeValue.String())
+		if err != nil {
 			return nil, err
-		} else {
-			value := int32(valueToReturn)
-			return &value, nil
 		}
-	} else {
-		return nil, errors.New(fmt.Sprintf("int value not found using path %v in json %v", path, json))
+		value := int32(valueToReturn)
+		return &value, nil
 	}
+	return nil, fmt.Errorf("int value not found using path %v in json %v", path, json)
 }
 
 func getPropertiesFromPath(path string, json string) *string {
@@ -177,7 +174,6 @@ func getPropertiesFromPath(path string, json string) *string {
 		innerProperties := maybeProperties.Raw
 		properties := fmt.Sprintf(`{"properties":%v}`, innerProperties)
 		return &properties
-	} else {
-		return nil
 	}
+	return nil
 }

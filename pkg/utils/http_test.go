@@ -94,7 +94,6 @@ func TestIsXxxStatusCode(t *testing.T) {
 func maybeNot(b bool) string {
 	if b {
 		return "not "
-	} else {
-		return ""
 	}
+	return ""
 }

@@ -16,8 +16,8 @@ package v1alpha1
 
 import (
 	"context"
-	"github.com/Carrefour-Group/elastic-phenix-operator/pkg/utils"
 	"fmt"
+	"github.com/Carrefour-Group/elastic-phenix-operator/pkg/utils"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -90,7 +90,7 @@ func (r *ElasticIndex) ValidateCreate() error {
 				allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("elasticUri").Child("secretKeyRef"), string(secret.Data[secretKey]), errMsg))
 			} else {
 				if info, err := checkEsIndexExists(*r.Spec.IndexName, esConfig, elasticindexK8sClient); err != nil {
-					errMsg := fmt.Sprintf(`error while checking index "%v" existance from all kubernetes elasticindex objects. %v`, r.Spec.IndexName, err.Error())
+					errMsg := fmt.Sprintf(`error while checking index "%v" existence from all kubernetes elasticindex objects. %v`, r.Spec.IndexName, err.Error())
 					allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("indexName"), r.Spec.IndexName, errMsg))
 				} else if info != nil {
 					errMsg := fmt.Sprintf(`index "%v" for elasticsearch URI "%v:%v" was created by kubernetes elasticindex "%v" in namespace "%v"`, info.esObjectName, info.Host, info.Port, info.Name, info.Namespace)
@@ -106,10 +106,10 @@ func (r *ElasticIndex) ValidateCreate() error {
 		return apierrors.NewInvalid(
 			schema.GroupKind{Group: "elastic.carrefour.com", Kind: "ElasticIndex"},
 			r.Name, allErrs)
-	} else {
-		elasticindexlog.Info("[Webhook] ignore validate create", "namespace", r.Namespace, "name", r.Name)
-		return nil
 	}
+
+	elasticindexlog.Info("[Webhook] ignore validate create", "namespace", r.Namespace, "name", r.Name)
+	return nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
@@ -139,10 +139,10 @@ func (r *ElasticIndex) ValidateUpdate(old runtime.Object) error {
 		return apierrors.NewInvalid(
 			schema.GroupKind{Group: "elastic.carrefour.com", Kind: "ElasticIndex"},
 			r.Name, allErrs)
-	} else {
-		elasticindexlog.Info("[Webhook] ignore validate update", "namespace", r.Namespace, "name", r.Name)
-		return nil
 	}
+
+	elasticindexlog.Info("[Webhook] ignore validate update", "namespace", r.Namespace, "name", r.Name)
+	return nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
@@ -164,10 +164,10 @@ func (r *ElasticIndex) ValidateDelete() error {
 		return apierrors.NewInvalid(
 			schema.GroupKind{Group: "elastic.carrefour.com", Kind: "ElasticIndex"},
 			r.Name, allErrs)
-	} else {
-		elasticindexlog.Info("[Webhook] ignore validate delete", "namespace", r.Namespace, "name", r.Name)
-		return nil
 	}
+
+	elasticindexlog.Info("[Webhook] ignore validate delete", "namespace", r.Namespace, "name", r.Name)
+	return nil
 }
 
 func checkEsIndexExists(indexName string, esConfig *utils.EsConfig, k8sClient client.Client) (*EsObjectInfo, error) {
