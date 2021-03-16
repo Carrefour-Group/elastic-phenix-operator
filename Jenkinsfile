@@ -24,6 +24,10 @@ node("slave") {
             sh 'make test-in-docker'
         }
 
+        stage('go fmt') {
+            sh "make fmt-in-docker"
+        }
+
         stage('stop containers') {
             sh 'make docker-down'
             containersDown = true
