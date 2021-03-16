@@ -32,7 +32,6 @@ To protect sensitive data, elasticsearch server URI should be provided from a se
 
 You can customise `elastic-phenix-operator` behavior using these `manager` arguments:
 
-- `enable-delete`: enable `indices`/`templates` deletion on elasticsearch server when kubernetes `elasticindex`/`elastictemplate` objects are deleted. If not specified, only kubernetes `elasticindex`/`elastictemplate` objects will be deleted
 - `namespaces`: create a cache on namespaces and watch only these namespace (defaults to all namespaces)
 - `namespaces-regex-filter`: watch all namespaces and filter before reconciliation process (defaults to no filter applied)
 
@@ -313,6 +312,26 @@ Status:
   Message:           [400 Bad Request] {"error":{"root_cause":[{"type":"mapper_parsing_exception","reason":"Root mapping definition has unsupported parameters:  [dynamicc : false]"}],"type":"mapper_parsing_exception","reason":"Failed to parse mapping: Root mapping definition has unsupported parameters:  [dynamicc : false]","caused_by":{"type":"mapper_parsing_exception","reason":"Root mapping definition has unsupported parameters:  [dynamicc : false]"}},"status":400}
   Status:            Error
 ```
+
+# Deleting elasticindex, elastictemplate with annotation
+
+When you delete an `ElasticIndex`/`ElasticTemplate` kubernetes object, the `index`/`template` in `elasticsearch` cluster will remain existing.
+
+```
+kubectl delete elastictemplate/invoice-template -n elastic-phenix-operator-system
+kubectl delete elasticindex/product-index -n elastic-phenix-operator-system
+```
+
+If you want to delete the `index`/`template` in `elasticsearch` cluster too, you should add the annotation `carrefour.com/delete-in-cluster=true` to your kubernetes object.
+
+```
+kubectl annotate elastictemplate/invoice-template carrefour.com/delete-in-cluster=true -n elastic-phenix-operator-system
+kubectl annotate elasticindex/product-index carrefour.com/delete-in-cluster=true -n elastic-phenix-operator-system
+```
+
+Now, when you delete your `ElasticIndex`/`ElasticTemplate` kubernetes object, elasticsearch `index`/`template` will be deleted too from `elasticsearch` cluster.
+
+**/!\\ For indices deletion, you will lose indices data in elasticsearch cluster /!\\**
 
 # Add new kind to elastic-phenix-operator
 

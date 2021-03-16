@@ -567,7 +567,6 @@ spec:
       - args:
         - --metrics-addr=127.0.0.1:8080
         - --enable-leader-election
-        - --enable-delete
         command:
         - /manager
         image: carrefourphx/elastic-phenix-operator:0.1.0-RC5

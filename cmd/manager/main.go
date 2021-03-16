@@ -44,7 +44,6 @@ const (
 	EnableLeaderElectionFlag  = "enable-leader-election"
 	NamespacesFlag            = "namespaces"
 	NamespacesRegexFilterFlag = "namespaces-regex-filter"
-	EnableDeleteFlag          = "enable-delete"
 )
 
 func init() {
@@ -67,8 +66,6 @@ func main() {
 		"this operator should manage resources (defaults to all namespaces)")
 	pflag.String(NamespacesRegexFilterFlag, "", "Filter that will be applied before reconciliation "+
 		"on namespaces managed by namespaces flag (defaults to no filter applied)")
-	pflag.Bool(EnableDeleteFlag, false, "Enable indices/templates deletion on elasticsearch server "+
-		"when kubernetes elasticindex/elastictemplate objects are deleted")
 
 	pflag.Parse()
 	viper.BindPFlags(pflag.CommandLine)
@@ -77,7 +74,6 @@ func main() {
 	var enableLeaderElection = viper.GetBool(EnableLeaderElectionFlag)
 	var namespaces []string = viper.GetStringSlice(NamespacesFlag)
 	var namespacesRegexFilter string = viper.GetString(NamespacesRegexFilterFlag)
-	var enableDelete = viper.GetBool(EnableDeleteFlag)
 
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 
@@ -108,15 +104,13 @@ func main() {
 
 	setupLog.Info("flags",
 		MetricsAddrFlag, metricsAddr, EnableLeaderElectionFlag, enableLeaderElection,
-		NamespacesFlag, namespaces, NamespacesRegexFilterFlag, namespacesRegexFilter,
-		EnableDeleteFlag, enableDelete)
+		NamespacesFlag, namespaces, NamespacesRegexFilterFlag, namespacesRegexFilter)
 
 	if err = (&controllers.ElasticIndexReconciler{
 		Client:                mgr.GetClient(),
 		Log:                   ctrl.Log.WithName("controllers").WithName("ElasticIndex"),
 		Scheme:                mgr.GetScheme(),
 		NamespacesRegexFilter: namespacesRegexFilter,
-		EnableDelete:          enableDelete,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ElasticIndex")
 		os.Exit(1)
@@ -130,7 +124,6 @@ func main() {
 		Log:                   ctrl.Log.WithName("controllers").WithName("ElasticTemplate"),
 		Scheme:                mgr.GetScheme(),
 		NamespacesRegexFilter: namespacesRegexFilter,
-		EnableDelete:          enableDelete,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ElasticTemplate")
 		os.Exit(1)
