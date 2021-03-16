@@ -16,9 +16,9 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	elasticv1alpha1 "github.com/Carrefour-Group/elastic-phenix-operator/pkg/api/v1alpha1"
 	"github.com/Carrefour-Group/elastic-phenix-operator/pkg/utils"
-	"fmt"
 	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -59,17 +59,18 @@ func (r *ElasticIndexReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 	}
 
 	var elasticsearch *utils.Elasticsearch
-	if esConfig, err := utils.BuildEsConfigFromSecretSelector(elasticIndex.ObjectMeta.Namespace, elasticIndex.Spec.ElasticURI.SecretKeyRef, r.Client); err != nil {
+	esConfig, err := utils.BuildEsConfigFromSecretSelector(elasticIndex.ObjectMeta.Namespace, elasticIndex.Spec.ElasticURI.SecretKeyRef, r.Client)
+	if err != nil {
 		log.Error(err, "unable to build EsConfig from a secret")
 		if indexStatusUpdated(&elasticIndex.Status, &utils.EsStatus{Status: utils.StatusError, Message: err.Error()}, log) {
 			r.Status().Update(ctx, &elasticIndex)
 		}
 		return ctrl.Result{RequeueAfter: ErrorInterval}, nil
-	} else {
-		log.Info("esConfig generated from secret", "EsConfig", esConfig)
-		if elasticsearch, err = (utils.Elasticsearch{}).NewClient(esConfig, log); err != nil {
-			return ctrl.Result{}, err
-		}
+	}
+
+	log.Info("esConfig generated from secret", "EsConfig", esConfig)
+	if elasticsearch, err = (utils.Elasticsearch{}).NewClient(esConfig, log); err != nil {
+		return ctrl.Result{}, err
 	}
 
 	if deleteRequest, err := manageIndexFinalizer(ctx, elasticIndex, elasticsearch, log, r); err != nil {
@@ -88,10 +89,9 @@ func (r *ElasticIndexReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 				if apierrors.IsConflict(err) {
 					log.Info("conflict: operation cannot be fulfilled on ElasticIndex. Requeue to try again")
 					return ctrl.Result{Requeue: true}, nil
-				} else {
-					log.Error(err, "unable to update ElasticIndex status")
-					return ctrl.Result{}, err
 				}
+				log.Error(err, "unable to update ElasticIndex status")
+				return ctrl.Result{}, err
 			}
 		}
 		if esStatus.Status == utils.StatusError {
@@ -104,9 +104,9 @@ func (r *ElasticIndexReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 
 	if elasticIndex.Status.Status == utils.StatusRetry {
 		return ctrl.Result{RequeueAfter: RetryInterval}, nil
-	} else {
-		return ctrl.Result{}, nil
 	}
+
+	return ctrl.Result{}, nil
 }
 
 func (r *ElasticIndexReconciler) SetupWithManager(mgr ctrl.Manager) error {
@@ -114,20 +114,20 @@ func (r *ElasticIndexReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return ctrl.NewControllerManagedBy(mgr).
 			For(&elasticv1alpha1.ElasticIndex{}).
 			Complete(r)
-	} else {
-		var regex = r.NamespacesRegexFilter
-		namespacesRegexFilter := predicate.Funcs{
-			CreateFunc:  func(ce event.CreateEvent) bool { return utils.FilterByNamespacesRegex(ce.Meta, regex, r.Log) },
-			DeleteFunc:  func(ce event.DeleteEvent) bool { return utils.FilterByNamespacesRegex(ce.Meta, regex, r.Log) },
-			UpdateFunc:  func(ce event.UpdateEvent) bool { return utils.FilterByNamespacesRegex(ce.MetaNew, regex, r.Log) },
-			GenericFunc: func(ce event.GenericEvent) bool { return utils.FilterByNamespacesRegex(ce.Meta, regex, r.Log) },
-		}
-
-		return ctrl.NewControllerManagedBy(mgr).
-			For(&elasticv1alpha1.ElasticIndex{}).
-			WithEventFilter(namespacesRegexFilter).
-			Complete(r)
 	}
+
+	var regex = r.NamespacesRegexFilter
+	namespacesRegexFilter := predicate.Funcs{
+		CreateFunc:  func(ce event.CreateEvent) bool { return utils.FilterByNamespacesRegex(ce.Meta, regex, r.Log) },
+		DeleteFunc:  func(ce event.DeleteEvent) bool { return utils.FilterByNamespacesRegex(ce.Meta, regex, r.Log) },
+		UpdateFunc:  func(ce event.UpdateEvent) bool { return utils.FilterByNamespacesRegex(ce.MetaNew, regex, r.Log) },
+		GenericFunc: func(ce event.GenericEvent) bool { return utils.FilterByNamespacesRegex(ce.Meta, regex, r.Log) },
+	}
+
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&elasticv1alpha1.ElasticIndex{}).
+		WithEventFilter(namespacesRegexFilter).
+		Complete(r)
 }
 
 func indexStatusUpdated(objectStatus *elasticv1alpha1.ElasticIndexStatus, esStatus *utils.EsStatus, log logr.Logger) bool {

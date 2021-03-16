@@ -16,8 +16,8 @@ package controllers
 
 import (
 	"context"
-	"github.com/Carrefour-Group/elastic-phenix-operator/pkg/utils"
 	"fmt"
+	"github.com/Carrefour-Group/elastic-phenix-operator/pkg/utils"
 	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -61,18 +61,18 @@ func (r *ElasticTemplateReconciler) Reconcile(req ctrl.Request) (ctrl.Result, er
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	var elasticsearch *utils.Elasticsearch
-	if esConfig, err := utils.BuildEsConfigFromSecretSelector(elasticTemplate.ObjectMeta.Namespace, elasticTemplate.Spec.ElasticURI.SecretKeyRef, r.Client); err != nil {
+	esConfig, err := utils.BuildEsConfigFromSecretSelector(elasticTemplate.ObjectMeta.Namespace, elasticTemplate.Spec.ElasticURI.SecretKeyRef, r.Client)
+	if err != nil {
 		log.Error(err, "unable to build EsConfig from a secret")
 		if templateStatusUpdated(&elasticTemplate.Status, &utils.EsStatus{Status: utils.StatusError, Message: err.Error()}, log) {
 			r.Status().Update(ctx, &elasticTemplate)
 		}
 		return ctrl.Result{RequeueAfter: ErrorInterval}, nil
-	} else {
-		log.Info("esConfig generated from secret", "EsConfig", esConfig)
-		if elasticsearch, err = (utils.Elasticsearch{}).NewClient(esConfig, log); err != nil {
-			return ctrl.Result{}, err
-		}
+	}
+	log.Info("esConfig generated from secret", "EsConfig", esConfig)
+	elasticsearch, err2 := (utils.Elasticsearch{}).NewClient(esConfig, log)
+	if err2 != nil {
+		return ctrl.Result{}, err2
 	}
 
 	if deleteRequest, err := manageTemplateFinalizer(ctx, elasticTemplate, elasticsearch, log, r); err != nil {
@@ -93,10 +93,9 @@ func (r *ElasticTemplateReconciler) Reconcile(req ctrl.Request) (ctrl.Result, er
 				if apierrors.IsConflict(err) {
 					log.Info("conflict: operation cannot be fulfilled on ElasticTemplate. Requeue to try again")
 					return ctrl.Result{Requeue: true}, nil
-				} else {
-					log.Error(err, "unable to update ElasticTemplate status")
-					return ctrl.Result{}, err
 				}
+				log.Error(err, "unable to update ElasticTemplate status")
+				return ctrl.Result{}, err
 			}
 		}
 		if esStatus.Status == utils.StatusError {
@@ -109,9 +108,9 @@ func (r *ElasticTemplateReconciler) Reconcile(req ctrl.Request) (ctrl.Result, er
 
 	if elasticTemplate.Status.Status == utils.StatusRetry {
 		return ctrl.Result{RequeueAfter: RetryInterval}, nil
-	} else {
-		return ctrl.Result{}, nil
 	}
+
+	return ctrl.Result{}, nil
 }
 
 func (r *ElasticTemplateReconciler) SetupWithManager(mgr ctrl.Manager) error {
@@ -119,20 +118,20 @@ func (r *ElasticTemplateReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return ctrl.NewControllerManagedBy(mgr).
 			For(&elasticv1alpha1.ElasticTemplate{}).
 			Complete(r)
-	} else {
-		var regex = r.NamespacesRegexFilter
-		namespacesRegexFilter := predicate.Funcs{
-			CreateFunc:  func(ce event.CreateEvent) bool { return utils.FilterByNamespacesRegex(ce.Meta, regex, r.Log) },
-			DeleteFunc:  func(ce event.DeleteEvent) bool { return utils.FilterByNamespacesRegex(ce.Meta, regex, r.Log) },
-			UpdateFunc:  func(ce event.UpdateEvent) bool { return utils.FilterByNamespacesRegex(ce.MetaNew, regex, r.Log) },
-			GenericFunc: func(ce event.GenericEvent) bool { return utils.FilterByNamespacesRegex(ce.Meta, regex, r.Log) },
-		}
-
-		return ctrl.NewControllerManagedBy(mgr).
-			For(&elasticv1alpha1.ElasticTemplate{}).
-			WithEventFilter(namespacesRegexFilter).
-			Complete(r)
 	}
+
+	var regex = r.NamespacesRegexFilter
+	namespacesRegexFilter := predicate.Funcs{
+		CreateFunc:  func(ce event.CreateEvent) bool { return utils.FilterByNamespacesRegex(ce.Meta, regex, r.Log) },
+		DeleteFunc:  func(ce event.DeleteEvent) bool { return utils.FilterByNamespacesRegex(ce.Meta, regex, r.Log) },
+		UpdateFunc:  func(ce event.UpdateEvent) bool { return utils.FilterByNamespacesRegex(ce.MetaNew, regex, r.Log) },
+		GenericFunc: func(ce event.GenericEvent) bool { return utils.FilterByNamespacesRegex(ce.Meta, regex, r.Log) },
+	}
+
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&elasticv1alpha1.ElasticTemplate{}).
+		WithEventFilter(namespacesRegexFilter).
+		Complete(r)
 }
 
 func templateStatusUpdated(objectStatus *elasticv1alpha1.ElasticTemplateStatus, esStatus *utils.EsStatus, log logr.Logger) bool {

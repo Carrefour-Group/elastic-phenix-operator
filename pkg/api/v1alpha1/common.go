@@ -15,8 +15,8 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"github.com/Carrefour-Group/elastic-phenix-operator/pkg/utils"
 	"fmt"
+	"github.com/Carrefour-Group/elastic-phenix-operator/pkg/utils"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"

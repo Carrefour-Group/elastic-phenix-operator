@@ -42,18 +42,18 @@ func GetSecret(namespace string, secretKeySelector *v1.SecretKeySelector, k8sCli
 }
 
 func BuildEsConfigFromSecretSelector(namespace string, secretKeySelector *v1.SecretKeySelector, k8sClient client.Client) (*EsConfig, error) {
-	if secret, err := GetSecret(namespace, secretKeySelector, k8sClient); err != nil {
+	secret, err := GetSecret(namespace, secretKeySelector, k8sClient)
+	if err != nil {
 		return nil, err
-	} else {
-		return BuildEsConfigFromExistingSecret(secret, secretKeySelector.Key)
 	}
+	return BuildEsConfigFromExistingSecret(secret, secretKeySelector.Key)
 }
 
 func BuildEsConfigFromExistingSecret(secret *v1.Secret, key string) (*EsConfig, error) {
 	elasticURI := string(secret.Data[key])
-	if esConfig, err := (&EsConfig{}).FromURI(elasticURI); err != nil {
+	esConfig, err := (&EsConfig{}).FromURI(elasticURI)
+	if err != nil {
 		return nil, err
-	} else {
-		return esConfig, nil
 	}
+	return esConfig, nil
 }
