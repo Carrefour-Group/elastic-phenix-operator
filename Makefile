@@ -27,6 +27,12 @@ docker-down:
 vet-in-docker:
 	docker-compose -f docker-compose-test.yml exec -T build go vet ./...
 
+# Run fmt inside docker
+fmt-in-docker:
+	@if docker-compose -f docker-compose-test.yml exec -T build bash -c '[ "$$(gofmt -s -l cmd/. pkg/. | wc -l)" -gt 0 ]'; then\
+		exit 1;\
+	fi
+
 # Run build inside docker
 build-in-docker:
 	docker-compose -f docker-compose-test.yml exec -T build go build -o bin/manager cmd/manager/main.go
