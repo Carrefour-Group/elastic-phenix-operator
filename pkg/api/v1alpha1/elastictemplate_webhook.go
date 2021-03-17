@@ -119,6 +119,11 @@ func (r *ElasticTemplate) ValidateUpdate(old runtime.Object) error {
 
 		var allErrs field.ErrorList
 
+		_, err := (&utils.EsModel{Model: *r.Spec.Model}).IsValid(utils.Template)
+		if err != nil {
+			allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("model"), r.Spec.Model, err.Error()))
+		}
+
 		oldR := old.(*ElasticTemplate)
 
 		if *r.Spec.TemplateName != *oldR.Spec.TemplateName {
