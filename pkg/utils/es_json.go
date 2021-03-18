@@ -28,8 +28,20 @@ func IsValidUpdateProperties(oldProperties string, newProperties string) bool {
 		oldPropKeys := funk.Keys(gjson.Get(oldProperties, "properties").Map()).([]string)
 		newPropKeys := funk.Keys(gjson.Get(newProperties, "properties").Map()).([]string)
 
-		return len(newPropKeys) >= len(oldPropKeys) &&
-			len(funk.IntersectString(oldPropKeys, newPropKeys)) == len(oldPropKeys)
+		if len(newPropKeys) < len(oldPropKeys) ||
+			len(funk.IntersectString(oldPropKeys, newPropKeys)) != len(oldPropKeys) {
+			return false
+		}
+
+		fieldsWithProperties := getNestedFieldsWithProperties(oldProperties)
+		for _, field := range fieldsWithProperties {
+			oldSubProperties := getPropertiesFromPath(fmt.Sprintf("properties.%v.properties", field), oldProperties)
+			newSubProperties := getPropertiesFromPath(fmt.Sprintf("properties.%v.properties", field), newProperties)
+			if !IsValidUpdateProperties(*oldSubProperties, *newSubProperties) {
+				return false
+			}
+		}
+		return true
 	}
 
 	return false
@@ -176,4 +188,14 @@ func getPropertiesFromPath(path string, json string) *string {
 		return &properties
 	}
 	return nil
+}
+
+func getNestedFieldsWithProperties(properties string) []string {
+	var fieldsWithProperties []string
+	for field, body := range gjson.Get(properties, "properties").Map() {
+		if gjson.Get(body.Raw, "properties").Exists() {
+			fieldsWithProperties = append(fieldsWithProperties, field)
+		}
+	}
+	return fieldsWithProperties
 }
