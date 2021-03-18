@@ -569,7 +569,7 @@ spec:
         - --enable-leader-election
         command:
         - /manager
-        image: carrefourphx/elastic-phenix-operator:0.1.0-RC6
+        image: carrefourphx/elastic-phenix-operator:0.1.0
         name: manager
         ports:
         - containerPort: 9443
