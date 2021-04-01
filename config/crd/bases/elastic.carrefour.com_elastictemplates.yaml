@@ -79,21 +79,26 @@ spec:
               - secretKeyRef
               type: object
             model:
+              description: Template mappings, settings, index_patterns and version
               type: string
             numberOfReplicas:
+              description: Number of elasticsearch replicas
               format: int32
               maximum: 3
               minimum: 1
               type: integer
             numberOfShards:
+              description: Number of elasticsearch shards
               format: int32
               maximum: 500
               minimum: 1
               type: integer
             order:
+              description: Template order
               nullable: true
               type: integer
             templateName:
+              description: Template name in elasticsearch server
               pattern: ^[a-z0-9-_\.]+$
               type: string
           required:
@@ -107,10 +112,15 @@ spec:
           description: ElasticTemplateStatus defines the observed state of ElasticTemplate
           properties:
             httpCodeStatus:
+              description: The http code status returned by elasticsearch
               type: string
             message:
+              description: The message returned by elasticsearch. Useful when Status
+                is Error or Retry
               type: string
             status:
+              description: 'Status indicates whether template was created successfully
+                in elasticsearch server. Possible values: Created, Error, Retry'
               type: string
           type: object
       type: object

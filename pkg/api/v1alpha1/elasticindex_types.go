@@ -26,6 +26,7 @@ type ElasticIndexSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
+	// Index name in elasticsearch server
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Pattern=`^[a-z0-9-_\.]+$`
 	IndexName *string `json:"indexName"`
@@ -34,16 +35,19 @@ type ElasticIndexSpec struct {
 	// +kubebuilder:validation:Required
 	ElasticURI ElasticURISource `json:"elasticURI"`
 
+	// Number of elasticsearch shards
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:Maximum=500
 	// +kubebuilder:validation:Required
 	NumberOfShards *int32 `json:"numberOfShards"`
 
+	// Number of elasticsearch replicas
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:Maximum=3
 	// +kubebuilder:validation:Required
 	NumberOfReplicas *int32 `json:"numberOfReplicas"`
 
+	// Index mappings, settings and aliases
 	// +kubebuilder:validation:Required
 	Model *string `json:"model"`
 }
@@ -53,12 +57,15 @@ type ElasticIndexStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
+	// Status indicates whether index was created successfully in elasticsearch server. Possible values: Created, Error, Retry
 	// +optional
 	Status string `json:"status,omitempty"`
 
+	// The http code status returned by elasticsearch
 	// +optional
 	HttpCodeStatus string `json:"httpCodeStatus,omitempty"`
 
+	// The message returned by elasticsearch. Useful when Status is Error or Retry
 	// +optional
 	Message string `json:"message,omitempty"`
 }

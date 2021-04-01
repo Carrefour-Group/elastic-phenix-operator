@@ -79,16 +79,20 @@ spec:
               - secretKeyRef
               type: object
             indexName:
+              description: Index name in elasticsearch server
               pattern: ^[a-z0-9-_\.]+$
               type: string
             model:
+              description: Index mappings, settings and aliases
               type: string
             numberOfReplicas:
+              description: Number of elasticsearch replicas
               format: int32
               maximum: 3
               minimum: 1
               type: integer
             numberOfShards:
+              description: Number of elasticsearch shards
               format: int32
               maximum: 500
               minimum: 1
@@ -104,10 +108,15 @@ spec:
           description: ElasticIndexStatus defines the observed state of ElasticIndex
           properties:
             httpCodeStatus:
+              description: The http code status returned by elasticsearch
               type: string
             message:
+              description: The message returned by elasticsearch. Useful when Status
+                is Error or Retry
               type: string
             status:
+              description: 'Status indicates whether index was created successfully
+                in elasticsearch server. Possible values: Created, Error, Retry'
               type: string
           type: object
       type: object

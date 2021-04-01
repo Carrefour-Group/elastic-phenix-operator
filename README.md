@@ -1,5 +1,5 @@
 <p align="center"><img src="logo.png" width="200x" /></p>
-<p><div align="center"><h1>elastic-phenix-operator</h1></div></p>
+<p><div align="center"><h1>Elasticsearch Phenix Operator</h1></div></p>
 <p align="center">
 <a href="https://goreportcard.com/report/github.com/Carrefour-Group/elastic-phenix-operator"><img alt="Go Report Card" src="https://goreportcard.com/badge/github.com/Carrefour-Group/elastic-phenix-operator" /></a>
 <a href="https://github.com/Carrefour-Group/elastic-phenix-operator/releases/tag/v0.1.0"><img alt="Release" src="https://img.shields.io/badge/release-v0.1.0-blue" /></a>
@@ -9,22 +9,28 @@
 
 # Overview
 
-`elastic-phenix-operator` is a kubernetes operator to manage `elasticsearch` Indices and Templates.
+`Elasticsearch Phenix Operator` is a kubernetes operator to manage `elasticsearch` Indices and Templates lifecycle.
+
+Supported Elasticsearch versions are:
+  *  Elasticsearch 6+
+  *  Elasticsearch 7+
+
+See the [Quickstart](https://github.com/Carrefour-Group/elastic-phenix-operator#quick-start) to get started with `Elasticsearch Phenix Operator`.
 
 # Contents
+- [Features](#features)
 - [Kubernetes Domain, Group and Kinds](#kubernetes-domain-group-and-kinds)
 - [Quick Start](#quick-start)
   * [Creating a kubernetes cluster](#creating-a-kubernetes-cluster)
   * [Install prerequisites](#install-prerequisites)
   * [Creating an elasticsearch cluster](#creating-an-elasticsearch-cluster)
-  * [Install elastic-phenix-operator](#install-elastic-phenix-operator)
+  * [Install Elasticsearch Phenix Operator](#install-elasticsearch-phenix-operator)
   * [Creating a secret for connection URL](#creating-a-secret-for-connection-url)
   * [Creating an elasticindex](#creating-an-elasticindex)
   * [Creating an elastictemplate](#creating-an-elastictemplate)
   * [Get created objects and debugging](#get-created-objects-and-debugging)
   * [Deleting elasticindex, elastictemplate with annotation](#deleting-elasticindex-elastictemplate-with-annotation)
 - [Architecture](#architecture)
-- [Operator features](#operator-features)
 - [Operator arguments](#operator-arguments)
 - [Release artifacts](#release-artifacts)
 - [Validations](#validations)
@@ -34,7 +40,16 @@
     + [on update](#on-update)
     + [on delete](#on-delete)
 - [Mutation](#mutation)
-- [Add new kind to elastic-phenix-operator](#add-new-kind-to-elastic-phenix-operator)
+- [Add new kind to Elasticsearch Phenix Operator](#add-new-kind-to-elasticsearch-phenix-operator)
+
+# Features:
+    
+  *  Manage Elasticsearch indices and templates lifecycle: create, update and delete
+  *  Create new indices/templates, or manage existing indices/templates. In case of existing indices/templates, the `ElasticIndex`/`ElasticTemplate` object definition should be compatible with existing `index` / `template`, otherwise you will get a kubernetes object created with `Error` status
+  *  One instance of the operator can manage indices and templates on different elasticsearch servers
+  *  Elasticsearch server URI is provided from a secret when you create ElasticIndex and ElasticTemplate objects
+  *  Manage indices and templates uniqueness inside kubernetes
+  *  A ValidatingWebhook is implemented to validate ElasticIndex and ElasticTemplate objects
 
 # Kubernetes Domain, Group and Kinds
 
@@ -132,18 +147,24 @@ You should wait until the `elasticsearch` cluster becomes in running state:
 kubectl wait --for=condition=Ready --timeout=-1s --all pods -n elastic-system
 ```
 
-## Install elastic-phenix-operator
+## Install Elasticsearch Phenix Operator
 
-To install `EPO` (`elastic-phenix-operator`):
+To install `Elasticsearch Phenix Operator` (`EPO`):
 
 ```
 kubectl apply -f https://raw.githubusercontent.com/Carrefour-Group/elastic-phenix-operator/v0.1.0/manifests/epo-all-in-one.yaml
 ```
 
-You should wait until `elastic-phenix-operator` becomes in running state:
+You should wait until `Elasticsearch Phenix Operator` becomes in running state:
 
 ```
 kubectl wait --for=condition=Ready --timeout=-1s --all pods -n elastic-phenix-operator-system
+```
+
+To access logs for deployment:
+
+```
+kubectl logs deployment/elastic-phenix-operator-controller-manager -c manager -n elastic-phenix-operator-system
 ```
 
 ## Creating a secret for connection URL
@@ -175,7 +196,7 @@ cat <<EOF | kubectl apply -n elastic-phenix-operator-system -f -
 apiVersion: elastic.carrefour.com/v1alpha1
 kind: ElasticIndex
 metadata:
-  name: invoice-template
+  name: product-index
   namespace: elastic-phenix-operator-system
 spec:
   indexName: product
@@ -188,6 +209,7 @@ spec:
   model: |-
     {
       "settings": {
+        "index.codec": "best_compression"
       },
       "mappings": {
         "_source": {
@@ -234,6 +256,7 @@ spec:
     {
       "index_patterns": ["invoice*"],
       "settings": {
+        "index.codec": "best_compression"
       },
       "mappings": {
         "_source": {
@@ -279,13 +302,18 @@ kubectl exec -it pod/elastic-system-es-default-0 -n elastic-system -- curl "loca
 kubectl exec -it pod/elastic-system-es-default-0 -n elastic-system -- curl "localhost:9200/_cat/templates/invoice?v"
 ```
 
-When you have an `elasticindex`/`elastictemplate` with `Error` status, use `kubectl describe` to get more details:
+The `STATUS` column indicates whether `index`/`template` was created successfully in elasticsearch server. Possible values: 
+
+  * `Created`: when `index`/`template` was created successfully in elasticsearch server
+  * `Error`, `Retry`: when error has occurred during creating or updating an `elasticindex`/`elastictemplate`
+
+When you have an `elasticindex`/`elastictemplate` with `Error` or `Retry` status, use `kubectl describe` to get more details:
 
 ```
-> kubectl describe elasticindex/city-index -n mynamespace
+> kubectl describe elasticindex/city-index -n elastic-phenix-operator-system
 
 Name:         city-index
-Namespace:    elasticsearch-dev
+Namespace:    elastic-phenix-operator-system
 Annotations:  API Version:  elastic.carrefour.com/v1alpha1
 Kind:         ElasticIndex
 Metadata:
@@ -322,31 +350,19 @@ Now, when you delete your `ElasticIndex`/`ElasticTemplate` kubernetes object, el
 
 ![elastic-phenix-operator](elastic-phenix-operator.png)
 
-# Operator features
-
-`elastic-phenix-operator` is compatible with `elasticsearch 6` and `elasticsearch 7` servers.
-
-It is possible to create `ElasticIndex` and `ElasticTemplate` objects:
-
-- for new `index` / `template`
-- on existing `index` / `template`, in this case your kubernetes object defintion should be compatible with existing `index` / `template`, otherwise you will get a kuberenetes object created with `Error` status
-
-To protect sensitive data, elasticsearch server URI should be provided from a secret when creating `ElasticIndex` and `ElasticTemplate` objects.
-
-
 # Operator arguments
 
-You can customise `elastic-phenix-operator` behavior using these `manager` arguments:
+You can customise `Elasticsearch Phenix Operator` behavior using these `manager` arguments:
 
 - `namespaces`: create a cache on namespaces and watch only these namespace (defaults to all namespaces)
 - `namespaces-regex-filter`: watch all namespaces and filter before reconciliation process (defaults to no filter applied)
 
 # Release artifacts
 
-When releasing `elastic-phenix-operator`, two artifacts are generated:
+When releasing `Elasticsearch Phenix Operator`, two artifacts are generated:
 
 - a docker image containing `elastic-phenix-operator` manager embedding `ElasticIndex` and `ElasticTemplate` controllers. All docker images are published in docker hub: https://hub.docker.com/r/carrefourphx/elastic-phenix-operator
-- an all-in-one kubernetes manifest file located at `manifest/epo-all-in-one.yaml` that defines all kubernetes objects needed to install and run the `elastic-phenix-operator`: `CustoResourceDefinition`, `Namespace`, `Deployment`, `Service`, `MutatingWebhookConfiguration`, `ValidatingWebhookConfiguration`, `Role`, `ClusterRole`, `RoleBinding`, `ClusterRoleBinding`, `Certificate`
+- an all-in-one kubernetes manifest file located at `manifest/epo-all-in-one.yaml` that defines all kubernetes objects needed to install and run the `Elasticsearch Phenix Operator`: `CustoResourceDefinition`, `Namespace`, `Deployment`, `Service`, `MutatingWebhookConfiguration`, `ValidatingWebhookConfiguration`, `Role`, `ClusterRole`, `RoleBinding`, `ClusterRoleBinding`, `Certificate`
 
 # Validations
 
@@ -485,7 +501,7 @@ spec:
     }
 ```
 
-# Add new kind to elastic-phenix-operator
+# Add new kind to Elasticsearch Phenix Operator
 
 This operator was generated using `kubebuilder 2.3.1`. For more details about `kubebuiler`: https://book.kubebuilder.io/
 
