@@ -612,7 +612,7 @@ spec:
           defaultMode: 420
           secretName: webhook-server-cert
 ---
-apiVersion: cert-manager.io/v1alpha2
+apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: elastic-phenix-operator-serving-cert
@@ -626,7 +626,7 @@ spec:
     name: elastic-phenix-operator-selfsigned-issuer
   secretName: webhook-server-cert
 ---
-apiVersion: cert-manager.io/v1alpha2
+apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
   name: elastic-phenix-operator-selfsigned-issuer
