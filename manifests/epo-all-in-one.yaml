@@ -22,6 +22,8 @@ spec:
           name: elastic-phenix-operator-webhook-service
           namespace: elastic-phenix-operator-system
           path: /convert
+      conversionReviewVersions:
+      - v1beta1
   group: elastic.carrefour.com
   names:
     kind: ElasticIndex
@@ -164,6 +166,8 @@ spec:
           name: elastic-phenix-operator-webhook-service
           namespace: elastic-phenix-operator-system
           path: /convert
+      conversionReviewVersions:
+      - v1beta1
   group: elastic.carrefour.com
   names:
     kind: ElasticTemplate
