@@ -76,7 +76,7 @@ kind create cluster --image=kindest/node:v1.17.0
 
 ## Install prerequisites
 
-`Cert-manager` is needed to handle TLS certificate for admission webhook servers. You need `cert-manager` version `v0.15.2` or above. For more information: https://github.com/jetstack/cert-manager/
+`Cert-manager` is needed to handle TLS certificate for admission webhook servers. You need `cert-manager` version `v1.0.0` or above. For more information: https://github.com/jetstack/cert-manager/
 
 To install `cert-manager`:
 
