@@ -593,7 +593,7 @@ metadata:
   name: elastic-phenix-operator-mutating-webhook-configuration
 webhooks:
 - admissionReviewVersions:
-  - v1beta1
+  - v1
   clientConfig:
     service:
       name: elastic-phenix-operator-webhook-service
@@ -613,7 +613,7 @@ webhooks:
     - elasticindices
   sideEffects: None
 - admissionReviewVersions:
-  - v1beta1
+  - v1
   clientConfig:
     service:
       name: elastic-phenix-operator-webhook-service
@@ -641,7 +641,7 @@ metadata:
   name: elastic-phenix-operator-validating-webhook-configuration
 webhooks:
 - admissionReviewVersions:
-  - v1beta1
+  - v1
   clientConfig:
     service:
       name: elastic-phenix-operator-webhook-service
@@ -662,7 +662,7 @@ webhooks:
     - elasticindices
   sideEffects: None
 - admissionReviewVersions:
-  - v1beta1
+  - v1
   clientConfig:
     service:
       name: elastic-phenix-operator-webhook-service
