@@ -15,12 +15,13 @@ metadata:
 spec:
   conversion:
     strategy: Webhook
-    webhookClientConfig:
-      caBundle: Cg==
-      service:
-        name: elastic-phenix-operator-webhook-service
-        namespace: elastic-phenix-operator-system
-        path: /convert
+    webhook:
+      clientConfig:
+        caBundle: Cg==
+        service:
+          name: elastic-phenix-operator-webhook-service
+          namespace: elastic-phenix-operator-system
+          path: /convert
   group: elastic.carrefour.com
   names:
     kind: ElasticIndex
@@ -156,12 +157,13 @@ metadata:
 spec:
   conversion:
     strategy: Webhook
-    webhookClientConfig:
-      caBundle: Cg==
-      service:
-        name: elastic-phenix-operator-webhook-service
-        namespace: elastic-phenix-operator-system
-        path: /convert
+    webhook:
+      clientConfig:
+        caBundle: Cg==
+        service:
+          name: elastic-phenix-operator-webhook-service
+          namespace: elastic-phenix-operator-system
+          path: /convert
   group: elastic.carrefour.com
   names:
     kind: ElasticTemplate
