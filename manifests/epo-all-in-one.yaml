@@ -5,39 +5,25 @@ metadata:
     control-plane: controller-manager
   name: elastic-phenix-operator-system
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: elastic-phenix-operator-system/elastic-phenix-operator-serving-cert
-    controller-gen.kubebuilder.io/version: v0.2.5
-  creationTimestamp: null
+    controller-gen.kubebuilder.io/version: v0.4.1
   name: elasticindices.elastic.carrefour.com
 spec:
-  additionalPrinterColumns:
-  - JSONPath: .spec.indexName
-    name: INDEX_NAME
-    type: string
-  - JSONPath: .spec.numberOfShards
-    name: SHARDS
-    type: integer
-  - JSONPath: .spec.numberOfReplicas
-    name: REPLICAS
-    type: integer
-  - JSONPath: .status.status
-    name: STATUS
-    type: string
-  - JSONPath: .metadata.creationTimestamp
-    name: AGE
-    type: date
   conversion:
     strategy: Webhook
-    webhookClientConfig:
-      caBundle: Cg==
-      service:
-        name: elastic-phenix-operator-webhook-service
-        namespace: elastic-phenix-operator-system
-        path: /convert
+    webhook:
+      clientConfig:
+        caBundle: Cg==
+        service:
+          name: elastic-phenix-operator-webhook-service
+          namespace: elastic-phenix-operator-system
+          path: /convert
+      conversionReviewVersions:
+      - v1beta1
   group: elastic.carrefour.com
   names:
     kind: ElasticIndex
@@ -48,98 +34,114 @@ spec:
     singular: elasticindex
   preserveUnknownFields: false
   scope: Namespaced
-  subresources:
-    status: {}
-  validation:
-    openAPIV3Schema:
-      description: ElasticIndex is the Schema for the elasticindices API
-      properties:
-        apiVersion:
-          description: 'APIVersion defines the versioned schema of this representation
-            of an object. Servers should convert recognized schemas to the latest
-            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-          type: string
-        kind:
-          description: 'Kind is a string value representing the REST resource this
-            object represents. Servers may infer this from the endpoint the client
-            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-          type: string
-        metadata:
-          type: object
-        spec:
-          description: ElasticIndexSpec defines the desired state of ElasticIndex
-          properties:
-            elasticURI:
-              description: Elasticsearch URI with this format <scheme>://<user>:<password>@<hostname>:<port>
-                from a key of a secret in the local namespace
-              properties:
-                secretKeyRef:
-                  description: SecretKeySelector selects a key of a Secret.
-                  properties:
-                    key:
-                      description: The key of the secret to select from.  Must be
-                        a valid secret key.
-                      type: string
-                    name:
-                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                        TODO: Add other useful fields. apiVersion, kind, uid?'
-                      type: string
-                    optional:
-                      description: Specify whether the Secret or its key must be defined
-                      type: boolean
-                  required:
-                  - key
-                  type: object
-              required:
-              - secretKeyRef
-              type: object
-            indexName:
-              description: Index name in elasticsearch server
-              pattern: ^[a-z0-9-_\.]+$
-              type: string
-            model:
-              description: Index mappings, settings and aliases
-              type: string
-            numberOfReplicas:
-              description: Number of elasticsearch replicas
-              format: int32
-              maximum: 3
-              minimum: 1
-              type: integer
-            numberOfShards:
-              description: Number of elasticsearch shards
-              format: int32
-              maximum: 500
-              minimum: 1
-              type: integer
-          required:
-          - elasticURI
-          - indexName
-          - model
-          - numberOfReplicas
-          - numberOfShards
-          type: object
-        status:
-          description: ElasticIndexStatus defines the observed state of ElasticIndex
-          properties:
-            httpCodeStatus:
-              description: The http code status returned by elasticsearch
-              type: string
-            message:
-              description: The message returned by elasticsearch. Useful when Status
-                is Error or Retry
-              type: string
-            status:
-              description: 'Status indicates whether index was created successfully
-                in elasticsearch server. Possible values: Created, Error, Retry'
-              type: string
-          type: object
-      type: object
-  version: v1alpha1
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.indexName
+      name: INDEX_NAME
+      type: string
+    - jsonPath: .spec.numberOfShards
+      name: SHARDS
+      type: integer
+    - jsonPath: .spec.numberOfReplicas
+      name: REPLICAS
+      type: integer
+    - jsonPath: .status.status
+      name: STATUS
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: ElasticIndex is the Schema for the elasticindices API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ElasticIndexSpec defines the desired state of ElasticIndex
+            properties:
+              elasticURI:
+                description: Elasticsearch URI with this format <scheme>://<user>:<password>@<hostname>:<port>
+                  from a key of a secret in the local namespace
+                properties:
+                  secretKeyRef:
+                    description: SecretKeySelector selects a key of a Secret.
+                    properties:
+                      key:
+                        description: The key of the secret to select from.  Must be
+                          a valid secret key.
+                        type: string
+                      name:
+                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          TODO: Add other useful fields. apiVersion, kind, uid?'
+                        type: string
+                      optional:
+                        description: Specify whether the Secret or its key must be
+                          defined
+                        type: boolean
+                    required:
+                    - key
+                    type: object
+                required:
+                - secretKeyRef
+                type: object
+              indexName:
+                description: Index name in elasticsearch server
+                pattern: ^[a-z0-9-_\.]+$
+                type: string
+              model:
+                description: Index mappings, settings and aliases
+                type: string
+              numberOfReplicas:
+                description: Number of elasticsearch replicas
+                format: int32
+                maximum: 3
+                minimum: 1
+                type: integer
+              numberOfShards:
+                description: Number of elasticsearch shards
+                format: int32
+                maximum: 500
+                minimum: 1
+                type: integer
+            required:
+            - elasticURI
+            - indexName
+            - model
+            - numberOfReplicas
+            - numberOfShards
+            type: object
+          status:
+            description: ElasticIndexStatus defines the observed state of ElasticIndex
+            properties:
+              httpCodeStatus:
+                description: The http code status returned by elasticsearch
+                type: string
+              message:
+                description: The message returned by elasticsearch. Useful when Status
+                  is Error or Retry
+                type: string
+              status:
+                description: 'Status indicates whether index was created successfully
+                  in elasticsearch server. Possible values: Created, Error, Retry'
+                type: string
+            type: object
+        type: object
     served: true
     storage: true
+    subresources:
+      status: {}
 status:
   acceptedNames:
     kind: ""
@@ -147,39 +149,25 @@ status:
   conditions: []
   storedVersions: []
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: elastic-phenix-operator-system/elastic-phenix-operator-serving-cert
-    controller-gen.kubebuilder.io/version: v0.2.5
-  creationTimestamp: null
+    controller-gen.kubebuilder.io/version: v0.4.1
   name: elastictemplates.elastic.carrefour.com
 spec:
-  additionalPrinterColumns:
-  - JSONPath: .spec.templateName
-    name: TEMPLATE_NAME
-    type: string
-  - JSONPath: .spec.numberOfShards
-    name: SHARDS
-    type: integer
-  - JSONPath: .spec.numberOfReplicas
-    name: REPLICAS
-    type: integer
-  - JSONPath: .status.status
-    name: STATUS
-    type: string
-  - JSONPath: .metadata.creationTimestamp
-    name: AGE
-    type: date
   conversion:
     strategy: Webhook
-    webhookClientConfig:
-      caBundle: Cg==
-      service:
-        name: elastic-phenix-operator-webhook-service
-        namespace: elastic-phenix-operator-system
-        path: /convert
+    webhook:
+      clientConfig:
+        caBundle: Cg==
+        service:
+          name: elastic-phenix-operator-webhook-service
+          namespace: elastic-phenix-operator-system
+          path: /convert
+      conversionReviewVersions:
+      - v1beta1
   group: elastic.carrefour.com
   names:
     kind: ElasticTemplate
@@ -190,155 +178,124 @@ spec:
     singular: elastictemplate
   preserveUnknownFields: false
   scope: Namespaced
-  subresources:
-    status: {}
-  validation:
-    openAPIV3Schema:
-      description: ElasticTemplate is the Schema for the elastictemplates API
-      properties:
-        apiVersion:
-          description: 'APIVersion defines the versioned schema of this representation
-            of an object. Servers should convert recognized schemas to the latest
-            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-          type: string
-        kind:
-          description: 'Kind is a string value representing the REST resource this
-            object represents. Servers may infer this from the endpoint the client
-            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-          type: string
-        metadata:
-          type: object
-        spec:
-          description: ElasticTemplateSpec defines the desired state of ElasticTemplate
-          properties:
-            elasticURI:
-              description: Elasticsearch URI with this format <scheme>://<user>:<password>@<hostname>:<port>
-                from a key of a secret in the local namespace
-              properties:
-                secretKeyRef:
-                  description: SecretKeySelector selects a key of a Secret.
-                  properties:
-                    key:
-                      description: The key of the secret to select from.  Must be
-                        a valid secret key.
-                      type: string
-                    name:
-                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                        TODO: Add other useful fields. apiVersion, kind, uid?'
-                      type: string
-                    optional:
-                      description: Specify whether the Secret or its key must be defined
-                      type: boolean
-                  required:
-                  - key
-                  type: object
-              required:
-              - secretKeyRef
-              type: object
-            model:
-              description: Template mappings, settings, index_patterns and version
-              type: string
-            numberOfReplicas:
-              description: Number of elasticsearch replicas
-              format: int32
-              maximum: 3
-              minimum: 1
-              type: integer
-            numberOfShards:
-              description: Number of elasticsearch shards
-              format: int32
-              maximum: 500
-              minimum: 1
-              type: integer
-            order:
-              description: Template order
-              nullable: true
-              type: integer
-            templateName:
-              description: Template name in elasticsearch server
-              pattern: ^[a-z0-9-_\.]+$
-              type: string
-          required:
-          - elasticURI
-          - model
-          - numberOfReplicas
-          - numberOfShards
-          - templateName
-          type: object
-        status:
-          description: ElasticTemplateStatus defines the observed state of ElasticTemplate
-          properties:
-            httpCodeStatus:
-              description: The http code status returned by elasticsearch
-              type: string
-            message:
-              description: The message returned by elasticsearch. Useful when Status
-                is Error or Retry
-              type: string
-            status:
-              description: 'Status indicates whether template was created successfully
-                in elasticsearch server. Possible values: Created, Error, Retry'
-              type: string
-          type: object
-      type: object
-  version: v1alpha1
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.templateName
+      name: TEMPLATE_NAME
+      type: string
+    - jsonPath: .spec.numberOfShards
+      name: SHARDS
+      type: integer
+    - jsonPath: .spec.numberOfReplicas
+      name: REPLICAS
+      type: integer
+    - jsonPath: .status.status
+      name: STATUS
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: ElasticTemplate is the Schema for the elastictemplates API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ElasticTemplateSpec defines the desired state of ElasticTemplate
+            properties:
+              elasticURI:
+                description: Elasticsearch URI with this format <scheme>://<user>:<password>@<hostname>:<port>
+                  from a key of a secret in the local namespace
+                properties:
+                  secretKeyRef:
+                    description: SecretKeySelector selects a key of a Secret.
+                    properties:
+                      key:
+                        description: The key of the secret to select from.  Must be
+                          a valid secret key.
+                        type: string
+                      name:
+                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          TODO: Add other useful fields. apiVersion, kind, uid?'
+                        type: string
+                      optional:
+                        description: Specify whether the Secret or its key must be
+                          defined
+                        type: boolean
+                    required:
+                    - key
+                    type: object
+                required:
+                - secretKeyRef
+                type: object
+              model:
+                description: Template mappings, settings, index_patterns and version
+                type: string
+              numberOfReplicas:
+                description: Number of elasticsearch replicas
+                format: int32
+                maximum: 3
+                minimum: 1
+                type: integer
+              numberOfShards:
+                description: Number of elasticsearch shards
+                format: int32
+                maximum: 500
+                minimum: 1
+                type: integer
+              order:
+                description: Template order
+                nullable: true
+                type: integer
+              templateName:
+                description: Template name in elasticsearch server
+                pattern: ^[a-z0-9-_\.]+$
+                type: string
+            required:
+            - elasticURI
+            - model
+            - numberOfReplicas
+            - numberOfShards
+            - templateName
+            type: object
+          status:
+            description: ElasticTemplateStatus defines the observed state of ElasticTemplate
+            properties:
+              httpCodeStatus:
+                description: The http code status returned by elasticsearch
+                type: string
+              message:
+                description: The message returned by elasticsearch. Useful when Status
+                  is Error or Retry
+                type: string
+              status:
+                description: 'Status indicates whether template was created successfully
+                  in elasticsearch server. Possible values: Created, Error, Retry'
+                type: string
+            type: object
+        type: object
     served: true
     storage: true
+    subresources:
+      status: {}
 status:
   acceptedNames:
     kind: ""
     plural: ""
   conditions: []
   storedVersions: []
----
-apiVersion: admissionregistration.k8s.io/v1beta1
-kind: MutatingWebhookConfiguration
-metadata:
-  annotations:
-    cert-manager.io/inject-ca-from: elastic-phenix-operator-system/elastic-phenix-operator-serving-cert
-  creationTimestamp: null
-  name: elastic-phenix-operator-mutating-webhook-configuration
-webhooks:
-- clientConfig:
-    caBundle: Cg==
-    service:
-      name: elastic-phenix-operator-webhook-service
-      namespace: elastic-phenix-operator-system
-      path: /mutate-elastic-carrefour-com-v1alpha1-elasticindex
-  failurePolicy: Fail
-  name: melasticindex.kb.io
-  rules:
-  - apiGroups:
-    - elastic.carrefour.com
-    apiVersions:
-    - v1alpha1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - elasticindices
-  sideEffects: None
-- clientConfig:
-    caBundle: Cg==
-    service:
-      name: elastic-phenix-operator-webhook-service
-      namespace: elastic-phenix-operator-system
-      path: /mutate-elastic-carrefour-com-v1alpha1-elastictemplate
-  failurePolicy: Fail
-  name: melastictemplate.kb.io
-  rules:
-  - apiGroups:
-    - elastic.carrefour.com
-    apiVersions:
-    - v1alpha1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - elastictemplates
-  sideEffects: None
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -463,6 +420,16 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
+  name: elastic-phenix-operator-metrics-reader
+rules:
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
   name: elastic-phenix-operator-proxy-role
 rules:
 - apiGroups:
@@ -477,16 +444,6 @@ rules:
   - subjectaccessreviews
   verbs:
   - create
----
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: ClusterRole
-metadata:
-  name: elastic-phenix-operator-metrics-reader
-rules:
-- nonResourceURLs:
-  - /metrics
-  verbs:
-  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -574,21 +531,11 @@ spec:
     spec:
       containers:
       - args:
-        - --secure-listen-address=0.0.0.0:8443
-        - --upstream=http://127.0.0.1:8080/
-        - --logtostderr=true
-        - --v=10
-        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.5.0
-        name: kube-rbac-proxy
-        ports:
-        - containerPort: 8443
-          name: https
-      - args:
         - --metrics-addr=127.0.0.1:8080
         - --enable-leader-election
         command:
         - /manager
-        image: carrefourphx/elastic-phenix-operator:0.2.0
+        image: carrefourphx/elastic-phenix-operator:0.3.0-SNAPSHOT
         name: manager
         ports:
         - containerPort: 9443
@@ -605,6 +552,16 @@ spec:
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
+      - args:
+        - --secure-listen-address=0.0.0.0:8443
+        - --upstream=http://127.0.0.1:8080/
+        - --logtostderr=true
+        - --v=10
+        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.5.0
+        name: kube-rbac-proxy
+        ports:
+        - containerPort: 8443
+          name: https
       terminationGracePeriodSeconds: 10
       volumes:
       - name: cert
@@ -634,16 +591,64 @@ metadata:
 spec:
   selfSigned: {}
 ---
-apiVersion: admissionregistration.k8s.io/v1beta1
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: elastic-phenix-operator-system/elastic-phenix-operator-serving-cert
+  name: elastic-phenix-operator-mutating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: elastic-phenix-operator-webhook-service
+      namespace: elastic-phenix-operator-system
+      path: /mutate-elastic-carrefour-com-v1alpha1-elasticindex
+  failurePolicy: Fail
+  name: melasticindex.kb.io
+  rules:
+  - apiGroups:
+    - elastic.carrefour.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - elasticindices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: elastic-phenix-operator-webhook-service
+      namespace: elastic-phenix-operator-system
+      path: /mutate-elastic-carrefour-com-v1alpha1-elastictemplate
+  failurePolicy: Fail
+  name: melastictemplate.kb.io
+  rules:
+  - apiGroups:
+    - elastic.carrefour.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - elastictemplates
+  sideEffects: None
+---
+apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: elastic-phenix-operator-system/elastic-phenix-operator-serving-cert
-  creationTimestamp: null
   name: elastic-phenix-operator-validating-webhook-configuration
 webhooks:
-- clientConfig:
-    caBundle: Cg==
+- admissionReviewVersions:
+  - v1
+  clientConfig:
     service:
       name: elastic-phenix-operator-webhook-service
       namespace: elastic-phenix-operator-system
@@ -662,8 +667,9 @@ webhooks:
     resources:
     - elasticindices
   sideEffects: None
-- clientConfig:
-    caBundle: Cg==
+- admissionReviewVersions:
+  - v1
+  clientConfig:
     service:
       name: elastic-phenix-operator-webhook-service
       namespace: elastic-phenix-operator-system
