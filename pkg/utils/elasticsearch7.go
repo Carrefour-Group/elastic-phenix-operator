@@ -16,11 +16,13 @@ package utils
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"github.com/elastic/go-elasticsearch/v7"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/go-logr/logr"
+	"net/http"
 	"strings"
 )
 
@@ -35,6 +37,7 @@ func (es *Elasticsearch7) NewClient(config *EsConfig, log logr.Logger) error {
 		Addresses: []string{config.String()},
 		Username:  config.Username,
 		Password:  config.Password,
+		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
 	}
 	client, err := elasticsearch.NewClient(conf)
 	log.Info("elasticsearch client created successfully", "host", config)

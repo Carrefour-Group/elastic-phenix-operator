@@ -16,6 +16,7 @@ package utils
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"github.com/go-logr/logr"
 	"io/ioutil"
@@ -81,7 +82,8 @@ type EsStatus struct {
 }
 
 func EsVersion(rawurl string) (int, error) {
-	resp, err := http.Get(rawurl)
+	client := &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
+	resp, err := client.Get(rawurl)
 	if err != nil {
 		return -1, err
 	}
