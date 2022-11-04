@@ -47,6 +47,33 @@ func TestIsValidUpdateProperties(t *testing.T) {
 	}
 }
 
+func TestGetElasticsearchVersion(t *testing.T) {
+	assert := assert.New(t)
+	scenarios := []struct {
+		jsonBody  string
+		esVersion int
+		error     bool
+	}{
+		{jsonBody: `{"name":"adf8","cluster_name":"es","cluster_uuid":"wLyZGB","version":{"number":"8.4.2"}}`, esVersion: 8, error: false},
+		{jsonBody: `{"name":"adf8","cluster_name":"es","cluster_uuid":"wLyZGB","version":{"number":"7.9.2"}}`, esVersion: 7, error: false},
+		{jsonBody: `{"name":"adf8","cluster_name":"es","cluster_uuid":"wLyZGB","version":{"number":"6.7.1"}}`, esVersion: 6, error: false},
+		{jsonBody: `{"name":"adf8","cluster_name":"es","cluster_uuid":"wLyZGB","version":{"number":"5.4.1"}}`, esVersion: -1, error: true},
+		{jsonBody: `{"name":"adf8","cluster_name":"es","cluster_uuid":"wLyZGB"}`, esVersion: -1, error: true},
+		{jsonBody: `{"name":"adf8","clust`, esVersion: -1, error: true},
+	}
+
+	for _, s := range scenarios {
+		esVersion, err := GetElasticsearchVersion(s.jsonBody)
+		if s.error {
+			assert.NotNil(err)
+			assert.Equal(-1, esVersion)
+		} else {
+			assert.Nil(err)
+			assert.Equal(s.esVersion, esVersion)
+		}
+	}
+}
+
 func TestEsModel_AddSettings(t *testing.T) {
 	assert := assert.New(t)
 	scenarios := []struct {

@@ -12,8 +12,9 @@
 `Elasticsearch Phenix Operator` is a kubernetes operator to manage `elasticsearch` Indices and Templates lifecycle.
 
 Supported Elasticsearch versions are:
-  *  Elasticsearch 6+
+  *  Elasticsearch 8+
   *  Elasticsearch 7+
+  *  Elasticsearch 6+
 
 See the [Quickstart](https://github.com/Carrefour-Group/elastic-phenix-operator#quick-start) to get started with `Elasticsearch Phenix Operator`.
 
