@@ -58,7 +58,6 @@ func (r *ElasticIndexReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	var elasticsearch *utils.Elasticsearch
 	esConfig, err := utils.BuildEsConfigFromSecretSelector(elasticIndex.ObjectMeta.Namespace, elasticIndex.Spec.ElasticURI.SecretKeyRef, r.Client)
 	if err != nil {
 		log.Error(err, "unable to build EsConfig from a secret")
@@ -68,8 +67,9 @@ func (r *ElasticIndexReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 		return ctrl.Result{RequeueAfter: ErrorInterval}, nil
 	}
 
-	log.Info("esConfig generated from secret", "EsConfig", esConfig)
-	if elasticsearch, err = (utils.Elasticsearch{}).NewClient(esConfig, log); err != nil {
+	log.Info("esConfig generated from secret", "EsConfig", esConfig, "EsVersion", esConfig.Version)
+	var elasticsearch = buildElasticsearchFromVersion(esConfig.Version)
+	if err = elasticsearch.NewClient(esConfig, log); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -144,7 +144,7 @@ func indexStatusUpdated(objectStatus *elasticv1alpha1.ElasticIndexStatus, esStat
 	return false
 }
 
-func manageIndexFinalizer(ctx context.Context, elasticIndex elasticv1alpha1.ElasticIndex, elasticsearch *utils.Elasticsearch, log logr.Logger, r *ElasticIndexReconciler) (bool, error) {
+func manageIndexFinalizer(ctx context.Context, elasticIndex elasticv1alpha1.ElasticIndex, elasticsearch utils.Elasticsearch, log logr.Logger, r *ElasticIndexReconciler) (bool, error) {
 	finalizerName := fmt.Sprintf("finalizer.%v", elasticv1alpha1.GroupVersion.Group)
 	deleteRequest := false
 

@@ -69,8 +69,9 @@ func (r *ElasticTemplateReconciler) Reconcile(req ctrl.Request) (ctrl.Result, er
 		}
 		return ctrl.Result{RequeueAfter: ErrorInterval}, nil
 	}
-	log.Info("esConfig generated from secret", "EsConfig", esConfig)
-	elasticsearch, err2 := (utils.Elasticsearch{}).NewClient(esConfig, log)
+	log.Info("esConfig generated from secret", "EsConfig", esConfig, "EsVersion", esConfig.Version)
+	var elasticsearch = buildElasticsearchFromVersion(esConfig.Version)
+	err2 := elasticsearch.NewClient(esConfig, log)
 	if err2 != nil {
 		return ctrl.Result{}, err2
 	}
@@ -148,7 +149,7 @@ func templateStatusUpdated(objectStatus *elasticv1alpha1.ElasticTemplateStatus, 
 	return false
 }
 
-func manageTemplateFinalizer(ctx context.Context, elasticTemplate elasticv1alpha1.ElasticTemplate, elasticsearch *utils.Elasticsearch, log logr.Logger, r *ElasticTemplateReconciler) (bool, error) {
+func manageTemplateFinalizer(ctx context.Context, elasticTemplate elasticv1alpha1.ElasticTemplate, elasticsearch utils.Elasticsearch, log logr.Logger, r *ElasticTemplateReconciler) (bool, error) {
 	finalizerName := fmt.Sprintf("finalizer.%v", elasticv1alpha1.GroupVersion.Group)
 	deleteRequest := false
 

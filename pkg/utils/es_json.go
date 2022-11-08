@@ -47,6 +47,20 @@ func IsValidUpdateProperties(oldProperties string, newProperties string) bool {
 	return false
 }
 
+func GetElasticsearchVersion(jsonBody string) (int, error) {
+	if maybeValue := gjson.Get(jsonBody, "version.number"); maybeValue.Exists() {
+		esVersion, err := strconv.Atoi(maybeValue.String()[0:1])
+		if err != nil {
+			return -1, fmt.Errorf("cannot retrieve elasticsearch version from this json %v", jsonBody)
+		}
+		if esVersion > 8 || esVersion < 6 {
+			return -1, fmt.Errorf("elasticsearch version %v not supported", maybeValue.String())
+		}
+		return esVersion, nil
+	}
+	return -1, fmt.Errorf("cannot retrieve elasticsearch version from this json %v", jsonBody)
+}
+
 type EsModel struct {
 	Model string
 }

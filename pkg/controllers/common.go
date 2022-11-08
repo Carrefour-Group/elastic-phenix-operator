@@ -15,6 +15,7 @@ limitations under the License.
 package controllers
 
 import (
+	"github.com/Carrefour-Group/elastic-phenix-operator/pkg/utils"
 	"time"
 )
 
@@ -23,3 +24,10 @@ const (
 	ErrorInterval             time.Duration = time.Minute * 5
 	DeleteInClusterAnnotation               = "carrefour.com/delete-in-cluster"
 )
+
+func buildElasticsearchFromVersion(version int) utils.Elasticsearch {
+	if version == 8 {
+		return &utils.Elasticsearch8{}
+	}
+	return &utils.Elasticsearch7{}
+}
