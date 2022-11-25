@@ -2,7 +2,7 @@
 <p><div align="center"><h1>Elasticsearch Phenix Operator</h1></div></p>
 <p align="center">
 <a href="https://goreportcard.com/report/github.com/Carrefour-Group/elastic-phenix-operator"><img alt="Go Report Card" src="https://goreportcard.com/badge/github.com/Carrefour-Group/elastic-phenix-operator" /></a>
-<a href="https://github.com/Carrefour-Group/elastic-phenix-operator/releases/tag/v0.1.0"><img alt="Release" src="https://img.shields.io/badge/release-v0.1.0-blue" /></a>
+<a href="https://github.com/Carrefour-Group/elastic-phenix-operator/releases/tag/v1.2.0"><img alt="Release" src="https://img.shields.io/badge/release-v1.2.0-blue" /></a>
 <a href="https://hub.docker.com/r/carrefourphx/elastic-phenix-operator/tags?page=1&ordering=last_updated"><img alt="Docker" src="https://img.shields.io/badge/docker-tags-orange" /></a>
 <a href="https://opensource.org/licenses/Apache-2.0"><img alt="License" src="https://img.shields.io/badge/License-Apache%202.0-green.svg" /></a>
 </p>
@@ -153,7 +153,7 @@ kubectl wait --for=condition=Ready --timeout=-1s --all pods -n elastic-system
 To install `Elasticsearch Phenix Operator` (`EPO`):
 
 ```
-kubectl apply -f https://raw.githubusercontent.com/Carrefour-Group/elastic-phenix-operator/v0.1.0/manifests/epo-all-in-one.yaml
+kubectl apply -f https://raw.githubusercontent.com/Carrefour-Group/elastic-phenix-operator/v1.2.0/manifests/epo-all-in-one.yaml
 ```
 
 You should wait until `Elasticsearch Phenix Operator` becomes in running state:
