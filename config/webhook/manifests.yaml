@@ -28,6 +28,27 @@ webhooks:
     - elasticindices
   sideEffects: None
 - admissionReviewVersions:
+  - v1beta1
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-elastic-carrefour-com-v1alpha1-elasticpipeline
+  failurePolicy: Fail
+  name: melasticpipeline.kb.io
+  rules:
+  - apiGroups:
+    - elastic.carrefour.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - elasticpipelines
+  sideEffects: None
+- admissionReviewVersions:
   - v1
   - v1beta1
   clientConfig:
@@ -77,6 +98,28 @@ webhooks:
     - DELETE
     resources:
     - elasticindices
+  sideEffects: None
+- admissionReviewVersions:
+  - v1beta1
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-elastic-carrefour-com-v1alpha1-elasticpipeline
+  failurePolicy: Fail
+  name: velasticpipeline.kb.io
+  rules:
+  - apiGroups:
+    - elastic.carrefour.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    - DELETE
+    resources:
+    - elasticpipelines
   sideEffects: None
 - admissionReviewVersions:
   - v1

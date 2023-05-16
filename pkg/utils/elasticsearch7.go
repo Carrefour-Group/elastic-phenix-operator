@@ -17,6 +17,7 @@ package utils
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/elastic/go-elasticsearch/v7"
@@ -86,6 +87,19 @@ func (es *Elasticsearch7) existsTemplate(ctx context.Context, templateName strin
 	defer response.Body.Close()
 	is2xxStatusCode := is2xxStatusCode(response.StatusCode)
 	return &is2xxStatusCode
+}
+
+func (es *Elasticsearch7) existsPipeline(ctx context.Context, pipelineName string) (bool, error) {
+	response, err := esapi.IngestGetPipelineRequest{
+		PipelineID: pipelineName,
+	}.Do(ctx, es.Client)
+	if err != nil {
+		es.log.Error(err, "error while checking pipeline exists", "pipelineName", pipelineName)
+		return false, err
+	}
+	defer response.Body.Close()
+	return is2xxStatusCode(response.StatusCode), nil
+
 }
 
 func (es *Elasticsearch7) getNumberOfReplicasAndShards(ctx context.Context, indexName string) (*int32, *int32) {
@@ -359,4 +373,129 @@ func (es *Elasticsearch7) DeleteTemplate(ctx context.Context, templateName strin
 
 	es.log.Info("template was deleted successfully", "templateName", templateName)
 	return nil
+}
+
+func (es *Elasticsearch7) DeletePipeline(ctx context.Context, pipelineName string) error {
+	ctx, cancel := context.WithTimeout(ctx, ElasticMainFnTimeout)
+	defer cancel()
+
+	exists, err := es.existsPipeline(ctx, pipelineName)
+	if err != nil {
+		es.log.Error(err, "pipeline cannot be deleted", "pipelineName", pipelineName)
+		return err
+	}
+	if !exists {
+		es.log.Info("pipeline cannot be deleted because it does not exists", "pipelineName", pipelineName)
+		return nil
+	}
+
+	pipelineStatus, err := es.isPipelineUsed(ctx, pipelineName)
+
+	if err != nil {
+		es.log.Error(err, "Pipeline cannot be deleted since we don't know if it used or not")
+		return err
+	}
+
+	if pipelineStatus.used {
+		err = fmt.Errorf("pipeline cannot be deleted since pipeline %s is used by index %s", pipelineName, *pipelineStatus.index)
+		es.log.Error(err, "pipeline cannot be deleted since used")
+		return err
+	}
+
+	response, err := esapi.IngestDeletePipelineRequest{PipelineID: pipelineName}.Do(ctx, es.Client)
+
+	if err != nil {
+		es.log.Error(err, "error while deleting pipeline", "pipelineName", pipelineName)
+		return err
+	}
+
+	defer response.Body.Close()
+
+	if !is2xxStatusCode(response.StatusCode) {
+		es.log.Error(nil, "error while deleting pipeline", "pipelineName", pipelineName, "http-response", response)
+		return fmt.Errorf("error while deleting pipeline %v: %v", pipelineName, response)
+	}
+
+	es.log.Info("pipeline was deleted successfully", "pipelineName", pipelineName)
+	return nil
+}
+
+func (es *Elasticsearch7) CreateOrUpdatePipeline(ctx context.Context, pipelineName string, model string) (*EsStatus, error) {
+	ctx, cancel := context.WithTimeout(ctx, ElasticMainFnTimeout)
+	defer cancel()
+
+	exists, err := es.existsPipeline(ctx, pipelineName)
+	if err != nil {
+		es.log.Error(err, "error while creating pipeline", "pipelineName", pipelineName)
+		return &EsStatus{Status: StatusError, Message: err.Error()}, err
+	}
+	response, err := esapi.IngestPutPipelineRequest{PipelineID: pipelineName, Body: strings.NewReader(model)}.Do(ctx, es.Client)
+	if err != nil {
+		es.log.Error(err, "error while creating pipeline", "pipelineName", pipelineName)
+		return &EsStatus{Status: StatusError, Message: err.Error()}, err
+	}
+
+	defer response.Body.Close()
+
+	if !is2xxStatusCode(response.StatusCode) {
+		es.log.Error(nil, "error while creating pipeline", "pipelineName", pipelineName, "http-response", response)
+		status := BuildEsStatus(response.StatusCode, response.String())
+		return status, errors.New("error while creating pipeline")
+	}
+
+	if exists {
+		es.log.Info("pipeline already exists and was updated successfully", "pipelineName", pipelineName)
+	} else {
+		es.log.Info("pipeline was created successfully", "pipelineName", pipelineName)
+	}
+
+	return BuildEsStatus(response.StatusCode, response.String()), nil
+}
+
+type PipelineStatus struct {
+	used  bool
+	index *string
+}
+
+func (es *Elasticsearch7) isPipelineUsed(ctx context.Context, pipelineName string) (*PipelineStatus, error) {
+	req := esapi.IndicesGetSettingsRequest{}
+
+	res, err := req.Do(ctx, es.Client)
+	if err != nil {
+		es.log.Error(err, "Error retrieving indices settings")
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.IsError() {
+		return nil, fmt.Errorf("error retrieving indices settings: %d", res.StatusCode)
+	}
+
+	var indicesSettings map[string]interface{}
+	if err := json.NewDecoder(res.Body).Decode(&indicesSettings); err != nil {
+		es.log.Error(err, "Error decoding indices elasticsearch response")
+		return nil, err
+	}
+	for indexName, indexSettings := range indicesSettings {
+		settings := indexSettings.(map[string]interface{})["settings"].(map[string]interface{})
+		defaultPipeline, found := settings["index"].(map[string]interface{})["default_pipeline"].(string)
+		if found && defaultPipeline == pipelineName {
+			return &PipelineStatus{
+				used:  true,
+				index: &indexName,
+			}, nil
+		}
+		finalPipeline, found := settings["index"].(map[string]interface{})["final_pipeline"].(string)
+		if found && finalPipeline == pipelineName {
+			return &PipelineStatus{
+				used:  true,
+				index: &indexName,
+			}, nil
+		}
+	}
+	return &PipelineStatus{
+		used:  false,
+		index: nil,
+	}, nil
+
 }

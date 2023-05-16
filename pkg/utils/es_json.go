@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	funk "github.com/thoas/go-funk"
 	"github.com/tidwall/gjson"
@@ -178,6 +179,10 @@ type EsMappings struct {
 	Mappings string
 }
 
+type EsPipelines struct {
+	Pipeline string
+}
+
 func (m EsMappings) GetProperties(indexName string) *string {
 	path := fmt.Sprintf("%v.mappings.properties", indexName)
 	return getPropertiesFromPath(path, m.Mappings)
@@ -212,4 +217,61 @@ func getNestedFieldsWithProperties(properties string) []string {
 		}
 	}
 	return fieldsWithProperties
+}
+
+type void struct{}
+
+var member void
+
+func (p EsPipelines) Validate() error {
+	pipeline := p.Pipeline
+	pipelineFields := []string{"description", "processors"}
+	pipelineFieldsSet := make(map[string]void)
+	processorFields := []string{"append", "attachment", "bytes", "circle", "community_id", "convert", "csv", "date", "date_index_name", "dissect", "dot_expander", "drop", "enrich", "fail", "fingerprint", "foreach", "geo_grid", "geoip", "grok", "gsub", "html_strip", "inference", "join", "json", "kv", "lowercase", "network_direction", "pipeline", "redact", "registered_domain", "remove", "rename", "script", "set", "set_security_user", "sort", "split", "trim", "uppercase", "url_decode", "uri_parts", "user_agent"}
+	processorFieldsSet := make(map[string]void)
+	for _, v := range processorFields {
+		processorFieldsSet[v] = member
+	}
+	for _, v := range pipelineFields {
+		pipelineFieldsSet[v] = member
+	}
+	var result map[string]interface{}
+	if err := json.Unmarshal([]byte(pipeline), &result); err != nil {
+		return fmt.Errorf("pipeline model is not a valid json")
+	}
+	keys := funk.Keys(result).([]string)
+
+	if len(keys) > len(pipelineFields) {
+		return fmt.Errorf("pipeline model should contain at most these fields %v", pipelineFields)
+	}
+
+	for _, v := range pipelineFields {
+		_, exists := result[v]
+		if !exists {
+			return fmt.Errorf("pipeline model should contain all the fields from this list %v", pipelineFields)
+		}
+	}
+
+	description, ok := result["description"].(string)
+	if !ok || strings.TrimSpace(description) == "" {
+		return fmt.Errorf("pipeline description field is not a valid string or empty")
+	}
+
+	processors, ok := result["processors"].([]interface{})
+	if !ok {
+		return fmt.Errorf("pipeline processors field is  not a json object")
+	}
+
+	for _, processor := range processors {
+		processKeys := funk.Keys(processor).([]string)
+		for _, processorKey := range processKeys {
+			_, exists := processorFieldsSet[processorKey]
+			if !exists {
+				return fmt.Errorf("pipeline processors field should contain only processors from this list %v", pipelineFields)
+			}
+		}
+	}
+
+	return nil
+
 }

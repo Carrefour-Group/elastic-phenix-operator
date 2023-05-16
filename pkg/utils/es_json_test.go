@@ -313,3 +313,36 @@ func TestEsMappings_GetProperties(t *testing.T) {
 		}
 	}
 }
+
+func TestEsPipelines_Validate(t *testing.T) {
+	a := assert.New(t)
+	err := EsPipelines{
+		Pipeline: `{
+      "description": "My optional pipeline description",
+      "processors": [
+        {
+          "set": {
+            "description": "My optional processor description",
+            "field": "my-long-field",
+            "value": 10
+          }
+        },
+        {
+          "set": {
+            "description": "Set 'my-boolean-field' to true",
+            "field": "my-boolean-field",
+            "value": true
+          }
+        },
+        {
+          "lowercase": {
+            "field": "my-keyword-field"
+          }
+        }
+      ]
+    }`,
+	}.Validate()
+
+	a.Nil(err)
+
+}

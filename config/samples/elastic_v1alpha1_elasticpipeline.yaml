@@ -1,0 +1,41 @@
+apiVersion: elastic.carrefour.com/v1alpha1
+kind: ElasticPipeline
+metadata:
+  labels:
+    app.kubernetes.io/name: elasticpipeline
+    app.kubernetes.io/instance: elasticpipeline-sample
+    app.kubernetes.io/part-of: elastic-pipleines
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: elastic-pipleines
+  name: elasticpipeline-sample
+spec:
+  pipelineName: "test-pipeline"
+  elasticURI:
+    secretKeyRef:
+      name: elasticsearch-cluster-secret
+      key: uri
+  model: |-
+    {
+      "description": "My optional pipeline description",
+      "processors": [
+        {
+          "set": {
+            "description": "My optional processor description",
+            "field": "my-long-field",
+            "value": 10
+          }
+        },
+        {
+          "set": {
+            "description": "Set 'my-boolean-field' to true",
+            "field": "my-boolean-field",
+            "value": true
+          }
+        },
+        {
+          "lowercase": {
+            "field": "my-keyword-field"
+          }
+        }
+      ]
+    }
