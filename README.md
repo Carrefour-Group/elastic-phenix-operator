@@ -29,8 +29,9 @@ See the [Quickstart](https://github.com/Carrefour-Group/elastic-phenix-operator#
   * [Creating a secret for connection URL](#creating-a-secret-for-connection-url)
   * [Creating an elasticindex](#creating-an-elasticindex)
   * [Creating an elastictemplate](#creating-an-elastictemplate)
+  * [Creating an elasticpipeline](#creating-an-elasticpipeline)
   * [Get created objects and debugging](#get-created-objects-and-debugging)
-  * [Deleting elasticindex, elastictemplate with annotation](#deleting-elasticindex-elastictemplate-with-annotation)
+  * [Deleting elasticindex, elastictemplate with annotation](#deleting-elasticindex-elastictemplate-elasticpipeline-with-annotation)
 - [Architecture](#architecture)
 - [Operator arguments](#operator-arguments)
 - [Release artifacts](#release-artifacts)
@@ -45,12 +46,12 @@ See the [Quickstart](https://github.com/Carrefour-Group/elastic-phenix-operator#
 
 # Features:
     
-  *  Manage Elasticsearch indices and templates lifecycle: create, update and delete
-  *  Create new indices/templates, or manage existing indices/templates. In case of existing indices/templates, the `ElasticIndex`/`ElasticTemplate` object definition should be compatible with existing `index` / `template`, otherwise you will get a kubernetes object created with `Error` status
-  *  One instance of the operator can manage indices and templates on different elasticsearch servers
-  *  Elasticsearch server URI is provided from a secret when you create ElasticIndex and ElasticTemplate objects
-  *  Manage indices and templates uniqueness inside kubernetes
-  *  A ValidatingWebhook is implemented to validate ElasticIndex and ElasticTemplate objects
+  *  Manage Elasticsearch indices, ingest pipelines and templates lifecycle: create, update and delete
+  *  Create new indices/templates/pipelines, or manage existing indices/templates/pipelines. In case of existing indices/templates/pipelines, the `ElasticIndex`/`ElasticTemplate`/`ElasticPipeline` object definition should be compatible with existing `index`/`template`/`pipeline`, otherwise you will get a kubernetes object created with `Error` status
+  *  One instance of the operator can manage indices, ingest pipelines and templates on different elasticsearch servers
+  *  Elasticsearch server URI is provided from a secret when you create ElasticIndex and ElasticTemplate and ElasticPipeline objects
+  *  Manage indices and templates and pipelines uniqueness inside kubernetes
+  *  A ValidatingWebhook is implemented to validate ElasticIndex and ElasticTemplate and ElasticPipeline objects
 
 # Kubernetes Domain, Group and Kinds
 
@@ -58,10 +59,11 @@ See the [Quickstart](https://github.com/Carrefour-Group/elastic-phenix-operator#
 
 **Group:** `elastic`
 
-**Kinds:** two kinds are available
+**Kinds:** three kinds are available
 
 - `ElasticIndex`: manage elasticsearch indices lifecycle `create`, `update` and `delete`
 - `ElasticTemplate`: manage elasticsearch templates lifecycle `create`, `update` and `delete`
+- `ElasticPipeline`: manage elasticsearch ingest pipelines lifecycle `create`, `update` and `delete`
 
 # Quick Start
 
@@ -278,6 +280,52 @@ spec:
 EOF
 ```
 
+## Creating an elasticpipeline
+
+When creating an `ElasticPipeline`, you should reference the elasticsearch server URI from the secret created before:
+**/!\\ Secret should be in the same namespace, otherwise you will get an error /!\\**
+
+```
+cat <<EOF | kubectl apply -n elastic-phenix-operator-system -f -
+apiVersion: elastic.carrefour.com/v1alpha1
+kind: ElasticPipeline
+metadata:
+  name: test-pipeline
+  namespace: elastic-phenix-operator-system
+spec:
+    pipelineName: "test-pipeline"
+  elasticURI:
+    secretKeyRef:
+      name: elasticsearch-cluster-secret
+      key: uri
+  model: |-
+    {
+      "description": "My optional pipeline description",
+      "processors": [
+        {
+          "set": {
+            "description": "My optional processor description",
+            "field": "my-long-field",
+            "value": 10
+          }
+        },
+        {
+          "set": {
+            "description": "Set 'my-boolean-field' to true",
+            "field": "my-boolean-field",
+            "value": true
+          }
+        },
+        {
+          "lowercase": {
+            "field": "my-keyword-field"
+          }
+        }
+      ]
+    }
+EOF
+```
+
 ## Get created objects and debugging
 
 To get created object, you can use `kubectl` cli:
@@ -294,21 +342,30 @@ city-index      city         4        3          Error     21m
 
 NAME                TEMPLATE_NAME   SHARDS   REPLICAS   STATUS    AGE
 invoice-template    invoice         5        3          Created   9m
+
+
+> kubectl get elasticpipeline -n elastic-phenix-operator-system
+
+NAME                     PIPELINE_NAME   STATUS    AGE
+elasticpipeline-sample   test-pipeline   Created   9h
+
 ```
+
 
 You can also check indices and templates in `elasticsearch` cluster:
 
 ```
 kubectl exec -it pod/elastic-system-es-default-0 -n elastic-system -- curl "localhost:9200/_cat/indices/product?v"
 kubectl exec -it pod/elastic-system-es-default-0 -n elastic-system -- curl "localhost:9200/_cat/templates/invoice?v"
+kubectl exec -it pod/elastic-system-es-default-0 -n elastic-system -- curl "localhost:9200/_ingest/pipeline/test-pipeline"
 ```
 
-The `STATUS` column indicates whether `index`/`template` was created successfully in elasticsearch server. Possible values: 
+The `STATUS` column indicates whether `index`/`template`/`pipeline` was created successfully in elasticsearch server. Possible values: 
 
   * `Created`: when `index`/`template` was created successfully in elasticsearch server
-  * `Error`, `Retry`: when error has occurred during creating or updating an `elasticindex`/`elastictemplate`
+  * `Error`, `Retry`: when error has occurred during creating or updating an `elasticindex`/`elastictemplate`/`elasticpipeline`
 
-When you have an `elasticindex`/`elastictemplate` with `Error` or `Retry` status, use `kubectl describe` to get more details:
+When you have an `elasticindex`/`elastictemplate`/`elasticpipeline` with `Error` or `Retry` status, use `kubectl describe` to get more details:
 
 ```
 > kubectl describe elasticindex/city-index -n elastic-phenix-operator-system
@@ -327,25 +384,29 @@ Status:
   Status:            Error
 ```
 
-## Deleting elasticindex, elastictemplate with annotation
+## Deleting elasticindex, elastictemplate, elasticpipeline with annotation
 
-When you delete an `ElasticIndex`/`ElasticTemplate` kubernetes object, the `index`/`template` in `elasticsearch` cluster will remain existing.
+When you delete an `ElasticIndex`/`ElasticTemplate` kubernetes object, the `index`/`template`/`pipeline` in `elasticsearch` cluster will remain existing.
 
 ```
 kubectl delete elastictemplate/invoice-template -n elastic-phenix-operator-system
 kubectl delete elasticindex/product-index -n elastic-phenix-operator-system
+kubectl delete elasticpipeline/test-pipeline -n elastic-phenix-operator-system
 ```
 
-If you want to delete the `index`/`template` in `elasticsearch` cluster too, you should add the annotation `carrefour.com/delete-in-cluster=true` to your kubernetes object.
+If you want to delete the `index`/`template`/`pipeline` in `elasticsearch` cluster too, you should add the annotation `carrefour.com/delete-in-cluster=true` to your kubernetes object.
 
 ```
 kubectl annotate elastictemplate/invoice-template carrefour.com/delete-in-cluster=true -n elastic-phenix-operator-system
 kubectl annotate elasticindex/product-index carrefour.com/delete-in-cluster=true -n elastic-phenix-operator-system
+kubectl annotate elasticpipeline/test-pipeline/delete-in-cluster=true -n elastic-phenix-operator-system
 ```
 
-Now, when you delete your `ElasticIndex`/`ElasticTemplate` kubernetes object, elasticsearch `index`/`template` will be deleted too from `elasticsearch` cluster.
+Now, when you delete your `ElasticIndex`/`ElasticTemplate`/`ElasticPipeline` kubernetes object, elasticsearch `index`/`template`/`pipeline` will be deleted too from `elasticsearch` cluster.
 
 **/!\\ For indices deletion, you will lose indices data in elasticsearch cluster /!\\**
+
+**/!\\ For pipelines deletion, the delete will not work if some index in elasticsearch uses the ingest pipeline as a default_pipeline or final_pipeline /!\\**
 
 # Architecture
 
@@ -397,6 +458,7 @@ Multiple rules are implemented for different actions: `create`, `update` or `del
 - `elasticURI` secret should respect this pattern: `<scheme>://<user>:<password>@<hostname>:<port>` e.g. `http://localhost:9200`, `https://elastic:pass@myshost:9200`
 - manage index and template **uniqueness**: you cannot create the same elasticsearch index/template (`indexName`/`templateName` field) on different kubernetes `ElasticIndex`/`ElasticTemplate` objects when you specify the same elasticsearch `host:port` in `elasticURI` secret
 
+
 ### on update
 
 `ElasticIndex`: you cannot update 
@@ -408,14 +470,18 @@ Multiple rules are implemented for different actions: `create`, `update` or `del
 - `templateName` field
 - `model` field if new model content is not a valid json
 
-For both `ElasticIndex`/`ElasticTemplate` when updating `elasticURI` secret:
-- it should exist on the same `ElasticIndex`/`ElasticTemplate` namespace
+`ElasticPipeline`: you cannot update
+- `pipelineName` field
+- `model` field if new model content is not a valid json
+
+For both `ElasticIndex`/`ElasticTemplate`/`ElasticPipeline` when updating `elasticURI` secret:
+- it should exist on the same `ElasticIndex`/`ElasticTemplate`/`ElasticPipeline` namespace
 - it should respect this pattern: `<scheme>://<user>:<password>@<hostname>:<port>` e.g. `http://localhost:9200`, `https://elastic:pass@myshost:9200`
 - you cannot update elasticsearch `host:port`, only `user` and/or `password` can be updated in `elasticURI` content
 
 ### on delete
 
-- `elasticURI` secret should exists on the same `ElasticIndex`/`ElasticTemplate` namespace
+- `elasticURI` secret should exists on the same `ElasticIndex`/`ElasticTemplate`/`ElasticPipeline` namespace
 
 # Mutation
 
