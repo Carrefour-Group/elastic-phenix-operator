@@ -33,6 +33,13 @@ type Elasticsearch8 struct {
 	log    logr.Logger
 }
 
+const (
+	IndexDefaultPipelineSetting = "default_pipeline"
+	IndexFinalPipelineSetting   = "final_pipeline"
+	Settings                    = "settings"
+	IndexSettings               = "index"
+)
+
 func (es *Elasticsearch8) NewClient(config *EsConfig, log logr.Logger) error {
 	conf := elasticsearch.Config{
 		Addresses: []string{config.String()},
@@ -370,6 +377,9 @@ func (es *Elasticsearch8) DeleteTemplate(ctx context.Context, templateName strin
 	return nil
 }
 
+// DeletePipeline deletes an Elasticsearch pipeline.
+// It takes in a context and a pipeline name as input parameters.
+// and only deletes the pipeline if it's not used by any index as default_pipeline or final_pipeline
 func (es *Elasticsearch8) DeletePipeline(ctx context.Context, pipelineName string) error {
 	ctx, cancel := context.WithTimeout(ctx, ElasticMainFnTimeout)
 	defer cancel()
@@ -380,18 +390,18 @@ func (es *Elasticsearch8) DeletePipeline(ctx context.Context, pipelineName strin
 		return err
 	}
 	if !exists {
-		es.log.Info("pipeline cannot be deleted because it does not exists", "pipelineName", pipelineName)
+		es.log.Info("pipeline cannot be deleted because it does not exist", "pipelineName", pipelineName)
 		return nil
 	}
 
-	pipelineStatus, err := es.isPipelineUsed(ctx, pipelineName)
+	pipelineStatus, err := es.getPipelineStatus(ctx, pipelineName)
 
 	if err != nil {
 		es.log.Error(err, "Pipeline cannot be deleted since we don't know if it used or not")
 		return err
 	}
 
-	if pipelineStatus.used {
+	if pipelineStatus != nil && pipelineStatus.used {
 		err = fmt.Errorf("pipeline cannot be deleted since pipeline %s is used by index %s", pipelineName, *pipelineStatus.index)
 		return err
 	}
@@ -433,7 +443,7 @@ func (es *Elasticsearch8) CreateOrUpdatePipeline(ctx context.Context, pipelineNa
 	defer response.Body.Close()
 
 	if !is2xxStatusCode(response.StatusCode) {
-		es.log.Error(nil, "error while creating pipeline", "pipelineName", pipelineName, "http-response", response)
+		es.log.Error(nil, "error while creating pipeline", "pipelineName", pipelineName, "httpResponse", response)
 		status := BuildEsStatus(response.StatusCode, response.String())
 		return status, errors.New("error while creating pipeline")
 	}
@@ -447,9 +457,8 @@ func (es *Elasticsearch8) CreateOrUpdatePipeline(ctx context.Context, pipelineNa
 	return BuildEsStatus(response.StatusCode, response.String()), nil
 }
 
-func (es *Elasticsearch8) isPipelineUsed(ctx context.Context, pipelineName string) (*PipelineStatus, error) {
+func (es *Elasticsearch8) getPipelineStatus(ctx context.Context, pipelineName string) (*PipelineStatus, error) {
 	req := esapi.IndicesGetSettingsRequest{}
-
 	res, err := req.Do(ctx, es.Client)
 	if err != nil {
 		es.log.Error(err, "Error retrieving indices settings")
@@ -467,15 +476,15 @@ func (es *Elasticsearch8) isPipelineUsed(ctx context.Context, pipelineName strin
 		return nil, err
 	}
 	for indexName, indexSettings := range indicesSettings {
-		settings := indexSettings.(map[string]interface{})["settings"].(map[string]interface{})
-		defaultPipeline, found := settings["index"].(map[string]interface{})["default_pipeline"].(string)
+		settings := indexSettings.(map[string]interface{})[Settings].(map[string]interface{})
+		defaultPipeline, found := settings[IndexSettings].(map[string]interface{})[IndexDefaultPipelineSetting].(string)
 		if found && defaultPipeline == pipelineName {
 			return &PipelineStatus{
 				used:  true,
 				index: &indexName,
 			}, nil
 		}
-		finalPipeline, found := settings["index"].(map[string]interface{})["final_pipeline"].(string)
+		finalPipeline, found := settings[IndexSettings].(map[string]interface{})[IndexFinalPipelineSetting].(string)
 		if found && finalPipeline == pipelineName {
 			return &PipelineStatus{
 				used:  true,
