@@ -50,7 +50,7 @@ See the [Quickstart](https://github.com/Carrefour-Group/elastic-phenix-operator#
   *  Create new indices/templates/pipelines, or manage existing indices/templates/pipelines. In case of existing indices/templates/pipelines, the `ElasticIndex`/`ElasticTemplate`/`ElasticPipeline` object definition should be compatible with existing `index`/`template`/`pipeline`, otherwise you will get a kubernetes object created with `Error` status
   *  One instance of the operator can manage indices, ingest pipelines and templates on different elasticsearch servers
   *  Elasticsearch server URI is provided from a secret when you create ElasticIndex, ElasticTemplate and ElasticPipeline objects
-  *  Manage indices and templates and pipelines uniqueness inside kubernetes
+  *  Manage indices, templates and pipelines uniqueness inside kubernetes
   *  A ValidatingWebhook is implemented to validate ElasticIndex, ElasticTemplate and ElasticPipeline objects
 
 # Kubernetes Domain, Group and Kinds
