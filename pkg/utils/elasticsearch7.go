@@ -17,7 +17,6 @@ package utils
 import (
 	"context"
 	"crypto/tls"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/elastic/go-elasticsearch/v7"
@@ -437,47 +436,4 @@ func (es *Elasticsearch7) CreateOrUpdatePipeline(ctx context.Context, pipelineNa
 	}
 
 	return BuildEsStatus(response.StatusCode, response.String()), nil
-}
-
-func (es *Elasticsearch7) isPipelineUsed(ctx context.Context, pipelineName string) (*PipelineStatus, error) {
-	req := esapi.IndicesGetSettingsRequest{}
-
-	res, err := req.Do(ctx, es.Client)
-	if err != nil {
-		es.log.Error(err, "Error retrieving indices settings")
-		return nil, err
-	}
-	defer res.Body.Close()
-
-	if res.IsError() {
-		return nil, fmt.Errorf("error retrieving indices settings: %d", res.StatusCode)
-	}
-
-	var indicesSettings map[string]interface{}
-	if err := json.NewDecoder(res.Body).Decode(&indicesSettings); err != nil {
-		es.log.Error(err, "Error decoding indices elasticsearch response")
-		return nil, err
-	}
-	for indexName, indexSettings := range indicesSettings {
-		settings := indexSettings.(map[string]interface{})["settings"].(map[string]interface{})
-		defaultPipeline, found := settings["index"].(map[string]interface{})["default_pipeline"].(string)
-		if found && defaultPipeline == pipelineName {
-			return &PipelineStatus{
-				used:  true,
-				index: &indexName,
-			}, nil
-		}
-		finalPipeline, found := settings["index"].(map[string]interface{})["final_pipeline"].(string)
-		if found && finalPipeline == pipelineName {
-			return &PipelineStatus{
-				used:  true,
-				index: &indexName,
-			}, nil
-		}
-	}
-	return &PipelineStatus{
-		used:  false,
-		index: nil,
-	}, nil
-
 }
