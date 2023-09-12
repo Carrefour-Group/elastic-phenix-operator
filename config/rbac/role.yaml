@@ -71,15 +71,25 @@ rules:
   resources:
   - elasticpipelines/finalizers
   verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
   - update
+  - watch
 - apiGroups:
   - elastic.carrefour.com
   resources:
   - elasticpipelines/status
   verbs:
+  - create
+  - delete
   - get
+  - list
   - patch
   - update
+  - watch
 - apiGroups:
   - elastic.carrefour.com
   resources:
