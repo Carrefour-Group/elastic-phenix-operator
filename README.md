@@ -31,7 +31,7 @@ See the [Quickstart](https://github.com/Carrefour-Group/elastic-phenix-operator#
   * [Creating an elastictemplate](#creating-an-elastictemplate)
   * [Creating an elasticpipeline](#creating-an-elasticpipeline)
   * [Get created objects and debugging](#get-created-objects-and-debugging)
-  * [Deleting elasticindex, elastictemplate with annotation](#deleting-elasticindex-elastictemplate-elasticpipeline-with-annotation)
+  * [Deleting elasticindex, elastictemplate elasticpipeline with annotation](#deleting-elasticindex-elastictemplate-elasticpipeline-with-annotation)
 - [Architecture](#architecture)
 - [Operator arguments](#operator-arguments)
 - [Release artifacts](#release-artifacts)
@@ -49,9 +49,9 @@ See the [Quickstart](https://github.com/Carrefour-Group/elastic-phenix-operator#
   *  Manage Elasticsearch indices, ingest pipelines and templates lifecycle: create, update and delete
   *  Create new indices/templates/pipelines, or manage existing indices/templates/pipelines. In case of existing indices/templates/pipelines, the `ElasticIndex`/`ElasticTemplate`/`ElasticPipeline` object definition should be compatible with existing `index`/`template`/`pipeline`, otherwise you will get a kubernetes object created with `Error` status
   *  One instance of the operator can manage indices, ingest pipelines and templates on different elasticsearch servers
-  *  Elasticsearch server URI is provided from a secret when you create ElasticIndex and ElasticTemplate and ElasticPipeline objects
+  *  Elasticsearch server URI is provided from a secret when you create ElasticIndex, ElasticTemplate and ElasticPipeline objects
   *  Manage indices and templates and pipelines uniqueness inside kubernetes
-  *  A ValidatingWebhook is implemented to validate ElasticIndex and ElasticTemplate and ElasticPipeline objects
+  *  A ValidatingWebhook is implemented to validate ElasticIndex, ElasticTemplate and ElasticPipeline objects
 
 # Kubernetes Domain, Group and Kinds
 
@@ -362,7 +362,7 @@ kubectl exec -it pod/elastic-system-es-default-0 -n elastic-system -- curl "loca
 
 The `STATUS` column indicates whether `index`/`template`/`pipeline` was created successfully in elasticsearch server. Possible values: 
 
-  * `Created`: when `index`/`template` was created successfully in elasticsearch server
+  * `Created`: when `index`/`template`/`pipeline` was created successfully in elasticsearch server
   * `Error`, `Retry`: when error has occurred during creating or updating an `elasticindex`/`elastictemplate`/`elasticpipeline`
 
 When you have an `elasticindex`/`elastictemplate`/`elasticpipeline` with `Error` or `Retry` status, use `kubectl describe` to get more details:
@@ -386,7 +386,7 @@ Status:
 
 ## Deleting elasticindex, elastictemplate, elasticpipeline with annotation
 
-When you delete an `ElasticIndex`/`ElasticTemplate` kubernetes object, the `index`/`template`/`pipeline` in `elasticsearch` cluster will remain existing.
+When you delete an `ElasticIndex`/`ElasticTemplate`/`ElasticPipeline` kubernetes object, the `index`/`template`/`pipeline` in `elasticsearch` cluster will remain existing.
 
 ```
 kubectl delete elastictemplate/invoice-template -n elastic-phenix-operator-system
@@ -399,7 +399,7 @@ If you want to delete the `index`/`template`/`pipeline` in `elasticsearch` clust
 ```
 kubectl annotate elastictemplate/invoice-template carrefour.com/delete-in-cluster=true -n elastic-phenix-operator-system
 kubectl annotate elasticindex/product-index carrefour.com/delete-in-cluster=true -n elastic-phenix-operator-system
-kubectl annotate elasticpipeline/test-pipeline/delete-in-cluster=true -n elastic-phenix-operator-system
+kubectl annotate elasticpipeline/test-pipeline carrefour.com/delete-in-cluster=true -n elastic-phenix-operator-system
 ```
 
 Now, when you delete your `ElasticIndex`/`ElasticTemplate`/`ElasticPipeline` kubernetes object, elasticsearch `index`/`template`/`pipeline` will be deleted too from `elasticsearch` cluster.

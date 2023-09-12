@@ -40,14 +40,13 @@ type ElasticPipelineReconciler struct {
 }
 
 //+kubebuilder:rbac:groups=elastic.carrefour.com,resources=elasticpipelines,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=elastic.carrefour.com,resources=elasticpipelines/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=elastic.carrefour.com,resources=elasticpipelines/finalizers,verbs=update
+//+kubebuilder:rbac:groups=elastic.carrefour.com,resources=elasticpipelines/status,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=elastic.carrefour.com,resources=elasticpipelines/finalizers,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch
 //+kubebuilder:rbac:groups=core,resources=configmaps,verbs=get;list;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
 // the ElasticPipeline object against the actual cluster state, and then
 // perform operations to make the cluster state reflect the state specified by
 // the user.
@@ -102,15 +101,17 @@ func (r *ElasticPipelineReconciler) Reconcile(req ctrl.Request) (ctrl.Result, er
 			}
 			return ctrl.Result{RequeueAfter: RetryInterval}, nil
 		}
-		log.Info("create/update Elastic Pipeline", "pipelineName", elasticPipeline.Spec.PipelineName)
+		log.Info("create/update ElasticPipeline", "pipelineName", elasticPipeline.Spec.PipelineName)
 		esStatus, err := elasticsearch.CreateOrUpdatePipeline(ctx, elasticPipeline.Spec.PipelineName, elasticPipeline.Spec.Model)
-		if err := updatePipelineESStatus(ctx, r, req, esStatus, log); err != nil {
-			if apierrors.IsConflict(err) {
-				log.Info("conflict: operation cannot be fulfilled on ElasticPipeline. Requeue to try again")
-				return ctrl.Result{Requeue: true}, nil
+		if pipelineStatusUpdated(&elasticPipeline.Status, esStatus, log) {
+			if err := r.Status().Update(ctx, &elasticPipeline); err != nil {
+				if apierrors.IsConflict(err) {
+					log.Info("conflict: operation cannot be fulfilled on ElasticPipeline. Requeue to try again")
+					return ctrl.Result{Requeue: true}, nil
+				}
+				log.Error(err, "unable to update ElasticPipeline status")
+				return ctrl.Result{}, err
 			}
-			log.Error(err, "unable to update ElasticPipeline status")
-			return ctrl.Result{}, err
 		}
 		if esStatus.Status == utils.StatusError {
 			//blocking error no need to Requeue or Requeue after a long interval
@@ -121,25 +122,6 @@ func (r *ElasticPipelineReconciler) Reconcile(req ctrl.Request) (ctrl.Result, er
 	}
 
 	return ctrl.Result{}, nil
-}
-
-func updatePipelineESStatus(ctx context.Context, r *ElasticPipelineReconciler, req ctrl.Request, esStatus *utils.EsStatus, log logr.Logger) error {
-	var elasticPipeline elasticv1alpha1.ElasticPipeline
-	if err := r.Get(ctx, req.NamespacedName, &elasticPipeline); err != nil {
-		if apierrors.IsNotFound(err) {
-			log.Info("ElasticPipeline not found")
-		} else {
-			log.Error(err, "unable to fetch elasticpipeline object")
-		}
-		return client.IgnoreNotFound(err)
-	}
-	if pipelineStatusUpdated(&elasticPipeline.Status, esStatus, log) {
-		if err := r.Status().Update(ctx, &elasticPipeline); err != nil {
-			log.Error(err, "unable to update elasticpipeline object")
-			return err
-		}
-	}
-	return nil
 }
 
 func pipelineStatusUpdated(objectStatus *elasticv1alpha1.ElasticPipelineStatus, esStatus *utils.EsStatus, log logr.Logger) bool {
@@ -177,7 +159,7 @@ func managePipelineFinalizer(ctx context.Context, elasticPipeline elasticv1alpha
 					log.Error(err, "error while deleting elasticpipeline", "pipelineName", elasticPipeline.Spec.PipelineName)
 				}
 			} else {
-				log.Info("elasticindex deletion will not delete elasticsearch pipeline", "pipelineName", elasticPipeline.Spec.PipelineName)
+				log.Info("elasticpipeline deletion will not delete elasticsearch pipeline", "pipelineName", elasticPipeline.Spec.PipelineName)
 			}
 
 			// remove finalizer from the list and update it.

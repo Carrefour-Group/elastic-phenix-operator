@@ -316,8 +316,8 @@ func TestEsMappings_GetProperties(t *testing.T) {
 
 func TestEsPipelines_Validate(t *testing.T) {
 	a := assert.New(t)
-	err := EsPipelines{
-		Pipeline: `{
+	err, _ := (&EsModel{
+		Model: `{
       "description": "My optional pipeline description",
       "processors": [
         {
@@ -341,7 +341,7 @@ func TestEsPipelines_Validate(t *testing.T) {
         }
       ]
     }`,
-	}.Validate()
+	}).IsValid(Pipeline)
 
 	a.Nil(err)
 

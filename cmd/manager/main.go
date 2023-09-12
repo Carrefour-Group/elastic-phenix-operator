@@ -135,7 +135,7 @@ func main() {
 
 	if err = (&controllers.ElasticPipelineReconciler{
 		Client:                mgr.GetClient(),
-		Log:                   ctrl.Log.WithName("controllers").WithName("ElasticTemplate"),
+		Log:                   ctrl.Log.WithName("controllers").WithName("ElasticPipeline"),
 		Scheme:                mgr.GetScheme(),
 		NamespacesRegexFilter: namespacesRegexFilter,
 	}).SetupWithManager(mgr); err != nil {

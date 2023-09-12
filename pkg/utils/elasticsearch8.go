@@ -33,6 +33,11 @@ type Elasticsearch8 struct {
 	log    logr.Logger
 }
 
+type PipelineStatus struct {
+	used  bool
+	index *string
+}
+
 const (
 	IndexDefaultPipelineSetting = "default_pipeline"
 	IndexFinalPipelineSetting   = "final_pipeline"

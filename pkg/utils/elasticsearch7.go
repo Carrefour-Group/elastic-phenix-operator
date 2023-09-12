@@ -452,11 +452,6 @@ func (es *Elasticsearch7) CreateOrUpdatePipeline(ctx context.Context, pipelineNa
 	return BuildEsStatus(response.StatusCode, response.String()), nil
 }
 
-type PipelineStatus struct {
-	used  bool
-	index *string
-}
-
 func (es *Elasticsearch7) isPipelineUsed(ctx context.Context, pipelineName string) (*PipelineStatus, error) {
 	req := esapi.IndicesGetSettingsRequest{}
 

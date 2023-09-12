@@ -32,7 +32,7 @@ import (
 
 var (
 	// log is for logging in this package.
-	elasticpipelinelog        = logf.Log.WithName("elastictemplate-resource")
+	elasticpipelinelog        = logf.Log.WithName("elasticpipeline-resource")
 	elasticpipelineK8sClient  client.Client
 	elasticpipelineNamespaces []string
 )
@@ -45,11 +45,7 @@ func (r *ElasticPipeline) SetupWebhookWithManager(mgr ctrl.Manager, namespaces [
 		Complete()
 }
 
-// TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-
-//+kubebuilder:webhook:path=/mutate-elastic-carrefour-com-v1alpha1-elasticpipeline,mutating=true,failurePolicy=fail,sideEffects=None,groups=elastic.carrefour.com,resources=elasticpipelines,verbs=create;update,versions=v1alpha1,name=melasticpipeline.kb.io,admissionReviewVersions=v1beta1;v1
-//+kubebuilder:webhook:verbs=create;update;delete,path=/validate-elastic-carrefour-com-v1alpha1-elasticpipeline,mutating=false,failurePolicy=fail,groups=elastic.carrefour.com,resources=elasticpipelines,versions=v1alpha1,name=velasticpipeline.kb.io,sideEffects=none,admissionReviewVersions=v1beta1;v1
-
+// +kubebuilder:webhook:path=/mutate-elastic-carrefour-com-v1alpha1-elasticpipeline,mutating=true,failurePolicy=fail,sideEffects=None,groups=elastic.carrefour.com,resources=elasticpipelines,verbs=create;update,versions=v1alpha1,name=melasticpipeline.kb.io,admissionReviewVersions=v1beta1;v1
 var _ webhook.Defaulter = &ElasticPipeline{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
@@ -57,12 +53,16 @@ func (r *ElasticPipeline) Default() {
 	elasticpipelinelog.Info("default", "namespace", r.Namespace, "name", r.Name)
 }
 
+//+kubebuilder:webhook:verbs=create;update;delete,path=/validate-elastic-carrefour-com-v1alpha1-elasticpipeline,mutating=false,failurePolicy=fail,groups=elastic.carrefour.com,resources=elasticpipelines,versions=v1alpha1,name=velasticpipeline.kb.io,sideEffects=none,admissionReviewVersions=v1beta1;v1
+
+var _ webhook.Validator = &ElasticPipeline{}
+
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *ElasticPipeline) ValidateCreate() error {
 	if len(elasticpipelineNamespaces) == 0 || utils.ContainsString(elasticpipelineNamespaces, r.ObjectMeta.Namespace) {
 		elasticpipelinelog.Info("[Webhook] validate create", "namespace", r.Namespace, "name", r.Name)
 		var allErrs field.ErrorList
-		err := utils.EsPipelines{Pipeline: r.Spec.Model}.Validate()
+		_, err := (&utils.EsModel{Model: r.Spec.Model}).IsValid(utils.Pipeline)
 		if err != nil {
 			allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("model"), r.Spec.Model, err.Error()))
 		}
@@ -100,8 +100,6 @@ func (r *ElasticPipeline) ValidateCreate() error {
 
 }
 
-var _ webhook.Validator = &ElasticPipeline{}
-
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (r *ElasticPipeline) ValidateUpdate(old runtime.Object) error {
 	if len(elasticpipelineNamespaces) == 0 || utils.ContainsString(elasticpipelineNamespaces, r.ObjectMeta.Namespace) {
@@ -109,7 +107,7 @@ func (r *ElasticPipeline) ValidateUpdate(old runtime.Object) error {
 
 		var allErrs field.ErrorList
 
-		err := utils.EsPipelines{Pipeline: r.Spec.Model}.Validate()
+		_, err := (&utils.EsModel{Model: r.Spec.Model}).IsValid(utils.Pipeline)
 		if err != nil {
 			allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("model"), r.Spec.Model, err.Error()))
 		}

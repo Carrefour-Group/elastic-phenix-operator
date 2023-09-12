@@ -32,6 +32,7 @@ const (
 	StatusError                        = "Error"
 	Index                              = "Index"
 	Template                           = "Template"
+	Pipeline                           = "Pipeline"
 	ElasticMainFnTimeout time.Duration = 10 * time.Second
 )
 
