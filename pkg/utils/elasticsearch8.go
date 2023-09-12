@@ -399,18 +399,6 @@ func (es *Elasticsearch8) DeletePipeline(ctx context.Context, pipelineName strin
 		return nil
 	}
 
-	pipelineStatus, err := es.getPipelineStatus(ctx, pipelineName)
-
-	if err != nil {
-		es.log.Error(err, "Pipeline cannot be deleted since we don't know if it used or not")
-		return err
-	}
-
-	if pipelineStatus != nil && pipelineStatus.used {
-		err = fmt.Errorf("pipeline cannot be deleted since pipeline %s is used by index %s", pipelineName, *pipelineStatus.index)
-		return err
-	}
-
 	response, err := esapi.IngestDeletePipelineRequest{PipelineID: pipelineName}.Do(ctx, es.Client)
 
 	if err != nil {
