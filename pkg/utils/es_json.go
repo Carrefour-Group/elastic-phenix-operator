@@ -135,7 +135,7 @@ func (m *EsModel) IsValid(mType string) (bool, error) {
 		requiredFields = []string{"index_patterns"}
 	} else if mType == "Pipeline" {
 		keywords = []string{"description", "processors"}
-		requiredFields = []string{"processors"}
+		requiredFields = []string{"processors", "description"}
 	}
 
 	var result map[string]interface{}

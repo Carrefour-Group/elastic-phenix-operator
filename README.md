@@ -9,7 +9,7 @@
 
 # Overview
 
-`Elasticsearch Phenix Operator` is a kubernetes operator to manage `elasticsearch` Indices and Templates lifecycle.
+`Elasticsearch Phenix Operator` is a kubernetes operator to manage `elasticsearch` Indices, Templates and Pipelines lifecycle.
 
 Supported Elasticsearch versions are:
   *  Elasticsearch 8+
@@ -423,12 +423,12 @@ You can customise `Elasticsearch Phenix Operator` behavior using these `manager`
 
 When releasing `Elasticsearch Phenix Operator`, two artifacts are generated:
 
-- a docker image containing `elastic-phenix-operator` manager embedding `ElasticIndex` and `ElasticTemplate` controllers. All docker images are published in docker hub: https://hub.docker.com/r/carrefourphx/elastic-phenix-operator
+- a docker image containing `elastic-phenix-operator` manager embedding `ElasticIndex`, `ElasticTemplate` and `ElasticPipeline` controllers. All docker images are published in docker hub: https://hub.docker.com/r/carrefourphx/elastic-phenix-operator
 - an all-in-one kubernetes manifest file located at `manifest/epo-all-in-one.yaml` that defines all kubernetes objects needed to install and run the `Elasticsearch Phenix Operator`: `CustoResourceDefinition`, `Namespace`, `Deployment`, `Service`, `MutatingWebhookConfiguration`, `ValidatingWebhookConfiguration`, `Role`, `ClusterRole`, `RoleBinding`, `ClusterRoleBinding`, `Certificate`
 
 # Validations
 
-`ElasticIndex` and `ElasticTemplate` kubernetes objects creation goes through two steps of validation: **syntactic validation** and **semantic validation**
+`ElasticIndex`, `ElasticTemplate` and `ElasticPipeline` kubernetes objects creation goes through two steps of validation: **syntactic validation** and **semantic validation**
 
 ## Syntactic validation
 
@@ -453,8 +453,10 @@ Multiple rules are implemented for different actions: `create`, `update` or `del
 - `model` field content is a valid json
 - `ElasticIndex model` json root content contains at most `aliases`, `mappings`, `settings` 
 - `ElasticTemplate model` json root content contains at most `aliases`, `mappings`, `settings`, `index_patterns`, `version`
+- `ElasticPipeline model` json root content contains at most `description`, `processors`
 - `ElasticTemplate` model field contains the mandatory field `index_patterns`
-- `elasticURI` secret should exist on the same `ElasticIndex`/`ElasticTemplate` namespace
+- `ElasticPipelinel` model field contains the mandatory fields `description`, `processors`
+- `elasticURI` secret should exist on the same `ElasticIndex`/`ElasticTemplate`/`ElasticPipeline` namespace
 - `elasticURI` secret should respect this pattern: `<scheme>://<user>:<password>@<hostname>:<port>` e.g. `http://localhost:9200`, `https://elastic:pass@myshost:9200`
 - manage index and template **uniqueness**: you cannot create the same elasticsearch index/template (`indexName`/`templateName` field) on different kubernetes `ElasticIndex`/`ElasticTemplate` objects when you specify the same elasticsearch `host:port` in `elasticURI` secret
 
