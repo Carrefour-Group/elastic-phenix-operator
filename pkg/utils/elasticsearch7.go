@@ -194,10 +194,10 @@ func (es *Elasticsearch7) CreateOrUpdateIndex(ctx context.Context, indexName str
 
 // ptrToString return (nil) if the ptr is nil or the value
 func ptrToString(ptr *int32) string {
-  if ptr == nil {
-    return "(nil)"
-  }
-  return fmt.Sprintf("%d", *ptr)
+	if ptr == nil {
+		return "(nil)"
+	}
+	return fmt.Sprintf("%d", *ptr)
 }
 
 func (es *Elasticsearch7) updateIndexSettings(ctx context.Context, indexName string, model string) (*EsStatus, error) {
