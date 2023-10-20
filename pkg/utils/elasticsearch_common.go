@@ -114,3 +114,11 @@ type Elasticsearch interface {
 	CreateOrUpdateTemplate(ctx context.Context, templateName string, model string, order *int) (*EsStatus, error)
 	DeleteTemplate(ctx context.Context, templateName string) error
 }
+
+// ptrToString return (nil) if the ptr is nil or the value
+func ptrToString(ptr *int32) string {
+	if ptr == nil {
+		return "(nil)"
+	}
+	return fmt.Sprintf("%d", *ptr)
+}
