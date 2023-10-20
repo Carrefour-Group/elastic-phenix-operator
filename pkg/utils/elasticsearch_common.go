@@ -122,5 +122,3 @@ func ptrToString(ptr *int32) string {
 	}
 	return fmt.Sprintf("%d", *ptr)
 }
-
-
