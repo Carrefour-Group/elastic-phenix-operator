@@ -7,3 +7,5 @@ webhooks:
     sideEffects: None
   - name: melastictemplate.kb.io
     sideEffects: None
+  - name: melasticpipeline.kb.io
+    sideEffects: None

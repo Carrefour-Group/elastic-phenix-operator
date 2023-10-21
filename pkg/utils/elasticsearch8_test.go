@@ -245,3 +245,81 @@ func TestElasticsearch8_DeleteTemplate(t *testing.T) {
 	assert.Nil(err2)
 	assert.False(*elasticsearch.existsTemplate(ctx, templateName))
 }
+
+func TestElasticsearch8_CreateOrUpdatePipeline(t *testing.T) {
+	ctx := context.Background()
+	assert := assert.New(t)
+	elasticsearch := buildElasticsearch8(t)
+	defer deleteAllES8(elasticsearch)
+	pipelineName := "my-pipeline"
+	indexName := "my-test-index"
+
+	elasticsearch.DeleteIndex(ctx, indexName)
+
+	status, err := elasticsearch.CreateOrUpdatePipeline(ctx, pipelineName, `{
+      "description": "My optional pipeline description",
+      "processors": [
+        {
+          "set": {
+            "description": "Set 'my-boolean-field' to true",
+            "field": "my-boolean-field",
+            "value": true
+          }
+        },
+        {
+          "lowercase": {
+            "field": "my-keyword-field"
+          }
+        }
+      ]
+    }`)
+	assert.Nil(err)
+	assert.Equal("200", status.HttpCodeStatus)
+	found, err := elasticsearch.existsPipeline(ctx, pipelineName)
+	assert.Nil(err)
+	assert.True(found)
+
+	err2 := elasticsearch.DeletePipeline(ctx, pipelineName)
+	assert.Nil(err2)
+	found, err = elasticsearch.existsPipeline(ctx, pipelineName)
+	assert.Nil(err)
+	assert.False(found)
+}
+
+func TestElasticsearch8_DeletePipeline(t *testing.T) {
+	ctx := context.Background()
+	assert := assert.New(t)
+	elasticsearch := buildElasticsearch8(t)
+	defer deleteAllES8(elasticsearch)
+	pipelineName := "my-pipeline"
+	indexName := "my-test-index"
+	status, err := elasticsearch.CreateOrUpdatePipeline(ctx, pipelineName, `{
+      "description": "My optional pipeline description",
+      "processors": [
+        {
+          "set": {
+            "description": "Set 'my-boolean-field' to true",
+            "field": "my-boolean-field",
+            "value": true
+          }
+        },
+        {
+          "lowercase": {
+            "field": "my-keyword-field"
+          }
+        }
+      ]
+    }`)
+	status, err = elasticsearch.CreateOrUpdateIndex(ctx, indexName, `{"settings":{"number_of_replicas": "3", "number_of_shards": "5", "default_pipeline": "my-pipeline"}, "mappings":{"properties":{"description":{"type":"keyword"}}}}`)
+	assert.Nil(err)
+	assert.Equal("200", status.HttpCodeStatus)
+	assert.Equal(StatusCreated, status.Status)
+	assert.True(*elasticsearch.existsIndex(ctx, indexName))
+
+	err2 := elasticsearch.DeletePipeline(ctx, pipelineName)
+	assert.NotNil(err2)
+	found, err := elasticsearch.existsPipeline(ctx, pipelineName)
+	assert.Nil(err)
+	assert.True(found)
+	elasticsearch.DeleteIndex(ctx, indexName)
+}

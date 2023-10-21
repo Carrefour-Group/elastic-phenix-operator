@@ -32,6 +32,7 @@ const (
 	StatusError                        = "Error"
 	Index                              = "Index"
 	Template                           = "Template"
+	Pipeline                           = "Pipeline"
 	ElasticMainFnTimeout time.Duration = 10 * time.Second
 )
 
@@ -112,7 +113,9 @@ type Elasticsearch interface {
 	CreateOrUpdateIndex(ctx context.Context, indexName string, model string) (*EsStatus, error)
 	DeleteIndex(ctx context.Context, indexName string) error
 	CreateOrUpdateTemplate(ctx context.Context, templateName string, model string, order *int) (*EsStatus, error)
+	CreateOrUpdatePipeline(ctx context.Context, pipelineName string, model string) (*EsStatus, error)
 	DeleteTemplate(ctx context.Context, templateName string) error
+	DeletePipeline(ctx context.Context, pipelineName string) error
 }
 
 // ptrToString return (nil) if the ptr is nil or the value
