@@ -192,13 +192,14 @@ func (es *Elasticsearch7) CreateOrUpdateIndex(ctx context.Context, indexName str
 	return BuildEsStatus(response.StatusCode, response.String()), nil
 }
 
+//error handling for the case when numShards is not found
 func (es *Elasticsearch7) updateIndexSettings(ctx context.Context, indexName string, model string) (*EsStatus, error) {
 	oldNumReplicas, oldNumShards := es.getNumberOfReplicasAndShards(ctx, indexName)
 	numReplicas, err := (&EsModel{Model: model}).GetNumberOfReplicas()
 	numShards, err2 := (&EsModel{Model: model}).GetNumberOfShards()
 
 	if err != nil {
-		errMsg := fmt.Sprintf("error while getting number_of_repliacs from model %v", model)
+		errMsg := fmt.Sprintf("error while getting number_of_replicas from model %v", model)
 		es.log.Error(err, errMsg, "indexName", indexName)
 		return &EsStatus{Status: StatusError, Message: errMsg}, err
 	}
@@ -211,7 +212,7 @@ func (es *Elasticsearch7) updateIndexSettings(ctx context.Context, indexName str
 
 	isShardsUpdated := oldNumShards == nil || *oldNumShards != *numShards
 	if isShardsUpdated {
-		errMsg := fmt.Sprintf("you cannot update number_of_shards from %q to %q on existing index %v", ptrToString(oldNumShards), ptrToString(numShards), indexName)
+		errMsg := fmt.Sprintf("you cannot update number_of_shards from %q to %q on an existing index %v", ptrToString(oldNumShards), ptrToString(numShards), indexName)
 		es.log.Error(nil, errMsg, "indexName", indexName)
 		return &EsStatus{Status: StatusError, Message: errMsg}, errors.New(errMsg)
 	}
