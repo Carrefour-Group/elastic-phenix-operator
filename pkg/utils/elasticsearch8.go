@@ -32,6 +32,18 @@ type Elasticsearch8 struct {
 	log    logr.Logger
 }
 
+type PipelineStatus struct {
+	used  bool
+	index *string
+}
+
+const (
+	IndexDefaultPipelineSetting = "default_pipeline"
+	IndexFinalPipelineSetting   = "final_pipeline"
+	Settings                    = "settings"
+	IndexSettings               = "index"
+)
+
 func (es *Elasticsearch8) NewClient(config *EsConfig, log logr.Logger) error {
 	conf := elasticsearch.Config{
 		Addresses: []string{config.String()},
@@ -86,6 +98,18 @@ func (es *Elasticsearch8) existsTemplate(ctx context.Context, templateName strin
 	defer response.Body.Close()
 	is2xxStatusCode := is2xxStatusCode(response.StatusCode)
 	return &is2xxStatusCode
+}
+
+func (es *Elasticsearch8) existsPipeline(ctx context.Context, pipelineName string) (bool, error) {
+	response, err := esapi.IngestGetPipelineRequest{
+		PipelineID: pipelineName,
+	}.Do(ctx, es.Client)
+	if err != nil {
+		es.log.Error(err, "error while checking pipeline exists", "pipelineName", pipelineName)
+		return false, err
+	}
+	defer response.Body.Close()
+	return is2xxStatusCode(response.StatusCode), nil
 }
 
 func (es *Elasticsearch8) getNumberOfReplicasAndShards(ctx context.Context, indexName string) (*int32, *int32) {
@@ -355,4 +379,72 @@ func (es *Elasticsearch8) DeleteTemplate(ctx context.Context, templateName strin
 
 	es.log.Info("template was deleted successfully", "templateName", templateName)
 	return nil
+}
+
+// DeletePipeline deletes an Elasticsearch pipeline.
+// It takes in a context and a pipeline name as input parameters.
+// and only deletes the pipeline if it's not used by any index as default_pipeline or final_pipeline
+func (es *Elasticsearch8) DeletePipeline(ctx context.Context, pipelineName string) error {
+	ctx, cancel := context.WithTimeout(ctx, ElasticMainFnTimeout)
+	defer cancel()
+
+	exists, err := es.existsPipeline(ctx, pipelineName)
+	if err != nil {
+		es.log.Error(err, "pipeline cannot be deleted", "pipelineName", pipelineName)
+		return err
+	}
+	if !exists {
+		es.log.Info("pipeline cannot be deleted because it does not exist", "pipelineName", pipelineName)
+		return nil
+	}
+
+	response, err := esapi.IngestDeletePipelineRequest{PipelineID: pipelineName}.Do(ctx, es.Client)
+
+	if err != nil {
+		es.log.Error(err, "error while deleting pipeline", "pipelineName", pipelineName)
+		return err
+	}
+
+	defer response.Body.Close()
+
+	if !is2xxStatusCode(response.StatusCode) {
+		es.log.Error(nil, "error while deleting pipeline", "pipelineName", pipelineName, "http-response", response)
+		return fmt.Errorf("error while deleting pipeline %v: %v", pipelineName, response)
+	}
+
+	es.log.Info("pipeline was deleted successfully", "pipelineName", pipelineName)
+	return nil
+}
+
+func (es *Elasticsearch8) CreateOrUpdatePipeline(ctx context.Context, pipelineName string, model string) (*EsStatus, error) {
+	ctx, cancel := context.WithTimeout(ctx, ElasticMainFnTimeout)
+	defer cancel()
+
+	exists, err := es.existsPipeline(ctx, pipelineName)
+
+	if err != nil {
+		es.log.Error(err, "error while creating pipeline", "pipelineName", pipelineName)
+		return &EsStatus{Status: StatusError, Message: err.Error()}, err
+	}
+	response, err := esapi.IngestPutPipelineRequest{PipelineID: pipelineName, Body: strings.NewReader(model)}.Do(ctx, es.Client)
+	if err != nil {
+		es.log.Error(err, "error while creating pipeline", "pipelineName", pipelineName)
+		return &EsStatus{Status: StatusError, Message: err.Error()}, err
+	}
+
+	defer response.Body.Close()
+
+	if !is2xxStatusCode(response.StatusCode) {
+		es.log.Error(nil, "error while creating pipeline", "pipelineName", pipelineName, "httpResponse", response)
+		status := BuildEsStatus(response.StatusCode, response.String())
+		return status, errors.New("error while creating pipeline")
+	}
+
+	if exists {
+		es.log.Info("pipeline already exists and was updated successfully", "pipelineName", pipelineName)
+	} else {
+		es.log.Info("pipeline was created successfully", "pipelineName", pipelineName)
+	}
+
+	return BuildEsStatus(response.StatusCode, response.String()), nil
 }

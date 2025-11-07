@@ -132,6 +132,20 @@ func main() {
 		setupLog.Error(err, "unable to create webhook", "webhook", "ElasticTemplate")
 		os.Exit(1)
 	}
+
+	if err = (&controllers.ElasticPipelineReconciler{
+		Client:                mgr.GetClient(),
+		Log:                   ctrl.Log.WithName("controllers").WithName("ElasticPipeline"),
+		Scheme:                mgr.GetScheme(),
+		NamespacesRegexFilter: namespacesRegexFilter,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "ElasticPipeline")
+		os.Exit(1)
+	}
+	if err = (&elasticv1alpha1.ElasticPipeline{}).SetupWebhookWithManager(mgr, namespaces); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "ElasticPipeline")
+		os.Exit(1)
+	}
 	// +kubebuilder:scaffold:builder
 
 	setupLog.Info("starting manager")

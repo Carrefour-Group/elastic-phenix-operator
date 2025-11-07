@@ -1,0 +1,20 @@
+# permissions for end users to view elasticpipelines.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: elasticpipeline-viewer-role
+rules:
+- apiGroups:
+  - elastic.carrefour.com
+  resources:
+  - elasticpipelines
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - elastic.carrefour.com
+  resources:
+  - elasticpipelines/status
+  verbs:
+  - get

@@ -57,6 +57,42 @@ rules:
 - apiGroups:
   - elastic.carrefour.com
   resources:
+  - elasticpipelines
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - elastic.carrefour.com
+  resources:
+  - elasticpipelines/finalizers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - elastic.carrefour.com
+  resources:
+  - elasticpipelines/status
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - elastic.carrefour.com
+  resources:
   - elastictemplates
   verbs:
   - create
