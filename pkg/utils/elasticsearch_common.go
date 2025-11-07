@@ -117,3 +117,11 @@ type Elasticsearch interface {
 	DeleteTemplate(ctx context.Context, templateName string) error
 	DeletePipeline(ctx context.Context, pipelineName string) error
 }
+
+// ptrToString return (nil) if the ptr is nil or the value
+func ptrToString(ptr *int32) string {
+	if ptr == nil {
+		return "(nil)"
+	}
+	return fmt.Sprintf("%d", *ptr)
+}

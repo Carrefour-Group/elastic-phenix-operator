@@ -224,17 +224,17 @@ func (es *Elasticsearch7) updateIndexSettings(ctx context.Context, indexName str
 
 	isShardsUpdated := oldNumShards == nil || *oldNumShards != *numShards
 	if isShardsUpdated {
-		errMsg := fmt.Sprintf("you cannot update number_of_shards from %v to %v on existing index %v", *oldNumShards, *numShards, indexName)
+		errMsg := fmt.Sprintf("you cannot update number_of_shards from %q to %q on existing index %v", ptrToString(oldNumShards), ptrToString(numShards), indexName)
 		es.log.Error(nil, errMsg, "indexName", indexName)
 		return &EsStatus{Status: StatusError, Message: errMsg}, errors.New(errMsg)
 	}
 
 	isReplicasUpdated := (oldNumReplicas == nil || *oldNumReplicas != *numReplicas) && err == nil && err2 == nil
 	if isReplicasUpdated {
-		es.log.Info("index already exists and updating number_of_replicas", "indexName", indexName, "from", *oldNumReplicas, "to", *numReplicas)
+		es.log.Info("index already exists and updating number_of_replicas", "indexName", indexName, "from", ptrToString(oldNumReplicas), "to", ptrToString(numReplicas))
 		statusCode, responseStr, err := es.updateIndexReplicas(ctx, indexName, *numReplicas)
 		if err != nil {
-			errMsg := fmt.Sprintf("error while updating number_of_replicas from %v to %v", *oldNumReplicas, *numReplicas)
+			errMsg := fmt.Sprintf("error while updating number_of_replicas from %q to %q", ptrToString(oldNumReplicas), ptrToString(numReplicas))
 			es.log.Error(err, errMsg, "indexName", indexName)
 			return &EsStatus{Status: StatusError, Message: errMsg}, err
 		} else if !is2xxStatusCode(statusCode) {
