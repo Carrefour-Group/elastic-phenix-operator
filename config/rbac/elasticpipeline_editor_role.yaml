@@ -1,0 +1,24 @@
+# permissions for end users to edit elasticpipelines.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: elasticpipeline-editor-role
+rules:
+- apiGroups:
+  - elastic.carrefour.com
+  resources:
+  - elasticpipelines
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - elastic.carrefour.com
+  resources:
+  - elasticpipelines/status
+  verbs:
+  - get

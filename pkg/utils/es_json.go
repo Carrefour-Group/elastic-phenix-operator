@@ -17,10 +17,9 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
-
 	funk "github.com/thoas/go-funk"
 	"github.com/tidwall/gjson"
+	"strconv"
 )
 
 func IsValidUpdateProperties(oldProperties string, newProperties string) bool {
@@ -127,13 +126,16 @@ func (m *EsModel) IsMappingWithType() *bool {
 
 func (m *EsModel) IsValid(mType string) (bool, error) {
 	var keywords []string
-	var requiredField string
+	var requiredFields []string
 
 	if mType == "Index" {
 		keywords = []string{"aliases", "mappings", "settings"}
 	} else if mType == "Template" {
 		keywords = []string{"aliases", "mappings", "settings", "index_patterns", "version"}
-		requiredField = "index_patterns"
+		requiredFields = []string{"index_patterns"}
+	} else if mType == "Pipeline" {
+		keywords = []string{"description", "processors"}
+		requiredFields = []string{"processors", "description"}
 	}
 
 	var result map[string]interface{}
@@ -147,8 +149,10 @@ func (m *EsModel) IsValid(mType string) (bool, error) {
 		return false, fmt.Errorf("%v model should contain at most these fields %v", mType, keywords)
 	}
 
-	if requiredField != "" && !funk.ContainsString(keys, requiredField) {
-		return false, fmt.Errorf("%v model should contain required field %v", mType, requiredField)
+	for _, requiredField := range requiredFields {
+		if requiredField != "" && !funk.ContainsString(keys, requiredField) {
+			return false, fmt.Errorf("%v model should contain required field %v", mType, requiredField)
+		}
 	}
 
 	for _, k := range keys {
@@ -176,6 +180,10 @@ func (s *EsSettings) GetNumberOfReplicas(indexName string) (*int32, error) {
 
 type EsMappings struct {
 	Mappings string
+}
+
+type EsPipelines struct {
+	Pipeline string
 }
 
 func (m EsMappings) GetProperties(indexName string) *string {
@@ -213,3 +221,7 @@ func getNestedFieldsWithProperties(properties string) []string {
 	}
 	return fieldsWithProperties
 }
+
+type void struct{}
+
+var member void

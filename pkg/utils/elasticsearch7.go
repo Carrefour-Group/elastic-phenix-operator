@@ -88,6 +88,19 @@ func (es *Elasticsearch7) existsTemplate(ctx context.Context, templateName strin
 	return &is2xxStatusCode
 }
 
+func (es *Elasticsearch7) existsPipeline(ctx context.Context, pipelineName string) (bool, error) {
+	response, err := esapi.IngestGetPipelineRequest{
+		PipelineID: pipelineName,
+	}.Do(ctx, es.Client)
+	if err != nil {
+		es.log.Error(err, "error while checking pipeline exists", "pipelineName", pipelineName)
+		return false, err
+	}
+	defer response.Body.Close()
+	return is2xxStatusCode(response.StatusCode), nil
+
+}
+
 func (es *Elasticsearch7) getNumberOfReplicasAndShards(ctx context.Context, indexName string) (*int32, *int32) {
 	response, err := esapi.IndicesGetSettingsRequest{Index: []string{indexName}}.Do(ctx, es.Client)
 	if err != nil {
@@ -359,4 +372,68 @@ func (es *Elasticsearch7) DeleteTemplate(ctx context.Context, templateName strin
 
 	es.log.Info("template was deleted successfully", "templateName", templateName)
 	return nil
+}
+
+func (es *Elasticsearch7) DeletePipeline(ctx context.Context, pipelineName string) error {
+	ctx, cancel := context.WithTimeout(ctx, ElasticMainFnTimeout)
+	defer cancel()
+
+	exists, err := es.existsPipeline(ctx, pipelineName)
+	if err != nil {
+		es.log.Error(err, "pipeline cannot be deleted", "pipelineName", pipelineName)
+		return err
+	}
+	if !exists {
+		es.log.Info("pipeline cannot be deleted because it does not exists", "pipelineName", pipelineName)
+		return nil
+	}
+
+	response, err := esapi.IngestDeletePipelineRequest{PipelineID: pipelineName}.Do(ctx, es.Client)
+
+	if err != nil {
+		es.log.Error(err, "error while deleting pipeline", "pipelineName", pipelineName)
+		return err
+	}
+
+	defer response.Body.Close()
+
+	if !is2xxStatusCode(response.StatusCode) {
+		es.log.Error(nil, "error while deleting pipeline", "pipelineName", pipelineName, "http-response", response)
+		return fmt.Errorf("error while deleting pipeline %v: %v", pipelineName, response)
+	}
+
+	es.log.Info("pipeline was deleted successfully", "pipelineName", pipelineName)
+	return nil
+}
+
+func (es *Elasticsearch7) CreateOrUpdatePipeline(ctx context.Context, pipelineName string, model string) (*EsStatus, error) {
+	ctx, cancel := context.WithTimeout(ctx, ElasticMainFnTimeout)
+	defer cancel()
+
+	exists, err := es.existsPipeline(ctx, pipelineName)
+	if err != nil {
+		es.log.Error(err, "error while creating pipeline", "pipelineName", pipelineName)
+		return &EsStatus{Status: StatusError, Message: err.Error()}, err
+	}
+	response, err := esapi.IngestPutPipelineRequest{PipelineID: pipelineName, Body: strings.NewReader(model)}.Do(ctx, es.Client)
+	if err != nil {
+		es.log.Error(err, "error while creating pipeline", "pipelineName", pipelineName)
+		return &EsStatus{Status: StatusError, Message: err.Error()}, err
+	}
+
+	defer response.Body.Close()
+
+	if !is2xxStatusCode(response.StatusCode) {
+		es.log.Error(nil, "error while creating pipeline", "pipelineName", pipelineName, "http-response", response)
+		status := BuildEsStatus(response.StatusCode, response.String())
+		return status, errors.New("error while creating pipeline")
+	}
+
+	if exists {
+		es.log.Info("pipeline already exists and was updated successfully", "pipelineName", pipelineName)
+	} else {
+		es.log.Info("pipeline was created successfully", "pipelineName", pipelineName)
+	}
+
+	return BuildEsStatus(response.StatusCode, response.String()), nil
 }

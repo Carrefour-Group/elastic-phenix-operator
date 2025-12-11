@@ -7,3 +7,5 @@ webhooks:
     sideEffects: None
   - name: velastictemplate.kb.io
     sideEffects: None
+  - name: velasticpipeline.kb.io
+    sideEffects: None
